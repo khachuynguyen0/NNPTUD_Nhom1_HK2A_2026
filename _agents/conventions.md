@@ -1,8 +1,9 @@
 ---
-description: Quy tac va luu y chung cho project NNPTUD_Nhom1_HK2A_2026
+description: Quy tac va luu y chung cho project Quan Ly Tiem Spa - Loan Spa
 ---
 
-# Lưu Ý Project NNPTUD_Nhom1_HK2A_2026
+# Lưu Ý Project - Quản Lý Tiệm Spa (Loan Spa)
+
 
 ## BackEnd
 

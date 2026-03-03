@@ -1,75 +1,60 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NNPTUD Nhóm 1 - HK2A 2026</title>
+  <title>Loan Spa - Quản Lý Tiệm Spa</title>
   <link rel="stylesheet" href="/css/style.css" />
 </head>
+
 <body>
+
   <!-- Header -->
   <header class="header">
-    <div class="container">
-      <h1>🛒 NNPTUD Nhóm 1 - HK2A 2026</h1>
-      <p>Quản lý Danh Mục & Sản Phẩm</p>
-    </div>
+    <div class="logo">🌸</div>
+    <h1>Loan Spa</h1>
+    <p>Hệ thống quản lý tiệm spa</p>
   </header>
 
   <!-- Nav -->
   <nav class="nav">
-    <div class="container">
-      <a href="/index.html" class="nav-link active">🏠 Trang Chủ</a>
-      <a href="/pages/categories.html" class="nav-link">📂 Danh Mục</a>
-      <a href="/pages/products.html" class="nav-link">📦 Sản Phẩm</a>
-      <a href="/pages/users.html" class="nav-link">👥 Người Dùng</a>
-    </div>
+    <a href="/index.html" class="nav-link active">Trang Chủ</a>
+    <a href="/pages/categories.html" class="nav-link">Danh Mục</a>
+    <a href="/pages/services.html" class="nav-link">Dịch Vụ</a>
+    <a href="/pages/staff.html" class="nav-link">Nhân Viên</a>
   </nav>
 
   <!-- Main -->
-  <main class="container main">
+  <main class="main">
     <div class="card-grid">
+
       <a href="/pages/categories.html" class="card">
         <div class="card-icon">📂</div>
         <h2>Danh Mục</h2>
-        <p>Quản lý danh mục sản phẩm</p>
+        <p>Quản lý danh mục dịch vụ</p>
       </a>
-      <a href="/pages/products.html" class="card">
-        <div class="card-icon">📦</div>
-        <h2>Sản Phẩm</h2>
-        <p>Quản lý danh sách sản phẩm</p>
-      </a>
-      <a href="/pages/users.html" class="card">
-        <div class="card-icon">👥</div>
-        <h2>Người Dùng</h2>
-        <p>Quản lý tài khoản người dùng</p>
-      </a>
-    </div>
 
-    <!-- Kiem tra ket noi API -->
-    <div class="api-status">
-      <h3>Trạng thái API</h3>
-      <div id="apiStatus" class="status-box">Đang kiểm tra...</div>
+      <a href="/pages/services.html" class="card">
+        <div class="card-icon">💆</div>
+        <h2>Dịch Vụ</h2>
+        <p>Quản lý các dịch vụ spa</p>
+      </a>
+
+      <a href="/pages/staff.html" class="card">
+        <div class="card-icon">👥</div>
+        <h2>Nhân Viên</h2>
+        <p>Quản lý tài khoản nhân viên</p>
+      </a>
+
     </div>
   </main>
 
+  <!-- Footer -->
   <footer class="footer">
-    <p>NNPTUD Nhóm 1 - HK2A 2026 | API: <code>http://localhost:3000/api</code></p>
+    <p>🌸 Loan Spa &copy; 2026</p>
   </footer>
 
-  <script src="/js/api.js"></script>
-  <script>
-    // Kiem tra ket noi API khi trang load
-    (async () => {
-      const statusEl = document.getElementById('apiStatus');
-      try {
-        const data = await callApi('GET', '/api');
-        statusEl.textContent = '✅ ' + data.message;
-        statusEl.className = 'status-box success';
-      } catch (e) {
-        statusEl.textContent = '❌ Không thể kết nối API: ' + e.message;
-        statusEl.className = 'status-box error';
-      }
-    })();
-  </script>
 </body>
+
 </html>
