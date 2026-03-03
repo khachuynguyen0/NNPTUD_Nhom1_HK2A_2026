@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Người Dùng | NNPTUD Nhóm 1</title>
+    <link rel="stylesheet" href="/css/style.css" />
+</head>
+
+<body>
+    <header class="header">
+        <div class="container">
+            <h1>👥 Quản Lý Người Dùng</h1>
+        </div>
+    </header>
+    <nav class="nav">
+        <div class="container">
+            <a href="/index.html" class="nav-link">🏠 Trang Chủ</a>
+            <a href="/pages/categories.html" class="nav-link">📂 Danh Mục</a>
+            <a href="/pages/products.html" class="nav-link">📦 Sản Phẩm</a>
+            <a href="/pages/users.html" class="nav-link active">👥 Người Dùng</a>
+        </div>
+    </nav>
+
+    <main class="container main">
+        <h2 class="page-title">👥 Người Dùng</h2>
+
+        <div id="message" class="message"></div>
+
+        <div class="form-box">
+            <h3 id="formTitle">➕ Thêm Người Dùng Mới</h3>
+            <input type="hidden" id="editId" />
+            <div class="form-group">
+                <input type="text" id="username" placeholder="Tên đăng nhập *" />
+                <input type="email" id="email" placeholder="Email *" />
+                <input type="password" id="password" placeholder="Mật khẩu *" />
+                <select id="role">
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                </select>
+                <button class="btn btn-primary" onclick="submitForm()">Lưu</button>
+                <button class="btn" onclick="resetForm()" style="background:#95a5a6;color:white;">Hủy</button>
+            </div>
+        </div>
+
+        <div class="table-box">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Tên Đăng Nhập</th>
+                        <th>Email</th>
+                        <th>Vai Trò</th>
+                        <th>Ngày Tạo</th>
+                        <th>Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody id="userList">
+                    <tr>
+                        <td colspan="6" style="text-align:center;color:#888">Đang tải...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>NNPTUD Nhóm 1 - HK2A 2026</p>
+    </footer>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/users.js"></script>
+</body>
+
+</html>
