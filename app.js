@@ -1,12 +1,12 @@
 // Cau hinh ung dung Express chinh
-// require('dotenv').config(); // Bat khi can dung .env
+require('dotenv').config(); // Load bien moi truong tu .env
 
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var cors = require('cors');
-// var connectDB = require('./config/db'); // Bat khi da co MongoDB URI
+var connectDB = require('./config/db');
 
 // Import routes
 var indexRouter = require('./routes/index');
@@ -18,7 +18,7 @@ var usersRouter = require('./routes/users');
 var errorHandler = require('./middlewares/errorHandler');
 
 // Ket noi MongoDB Atlas (bat khi da co MONGODB_URI trong .env)
-// connectDB();
+connectDB(); // Ket noi MongoDB Atlas
 
 var app = express();
 
