@@ -140,44 +140,74 @@ body {
   background: #b71c1c;
 }
 
-/* ========== INFO CARDS ========== */
-.card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
+/* ========== SPA IMAGES & TEAM ========== */
+.spa-hero-img {
+  width: 100%;
+  border-radius: 16px;
+  margin-bottom: 32px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
-.card {
-  background: white;
-  border-radius: 12px;
-  padding: 28px 20px;
+.team-section {
   text-align: center;
-  text-decoration: none;
-  color: #333;
-  border: 2px solid #fce4ec;
-  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  margin-top: 40px;
 }
 
-.card:hover {
-  border-color: #e91e8c;
-  transform: translateY(-4px);
-  box-shadow: 0 8px 20px rgba(233, 30, 140, 0.12);
-}
-
-.card-icon {
-  font-size: 2.2rem;
-  margin-bottom: 10px;
-}
-
-.card h2 {
-  font-size: 1.05rem;
+.team-section h2 {
   color: #c2185b;
-  margin-bottom: 6px;
+  margin-bottom: 24px;
+  font-size: 1.5rem;
 }
 
-.card p {
-  font-size: 0.83rem;
-  color: #888;
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.team-member {
+  background: white;
+  border-radius: 14px;
+  padding: 24px;
+  border: 1px solid #fce4ec;
+  transition: transform 0.2s;
+}
+
+.team-member:hover {
+  transform: translateY(-5px);
+  border-color: #e91e8c;
+}
+
+.team-member img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 16px;
+  border: 4px solid #fce4ec;
+}
+
+.team-member h3 {
+  color: #c2185b;
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+}
+
+.team-member p {
+  color: #e91e8c;
+  font-weight: bold;
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+.team-quote {
+  font-style: italic;
+  color: #666;
+  max-width: 600px;
+  margin: 0 auto;
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
 /* ========== INFO SECTION (trang Home) ========== */
