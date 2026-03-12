@@ -110,6 +110,13 @@
                     opt.textContent = `${s.name} — ${price}`;
                     sel.appendChild(opt);
                 });
+
+                // Tu dong chon dich vu neu co tham so serviceId tren URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const serviceId = urlParams.get('serviceId');
+                if (serviceId) {
+                    sel.value = serviceId;
+                }
             } catch (err) {
                 console.error('[Booking] loi load dich vu:', err.message);
             }
