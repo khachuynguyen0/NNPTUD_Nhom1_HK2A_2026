@@ -21,11 +21,10 @@ const productSchema = new mongoose.Schema(
             type: String,
             default: '',
         },
-        // Lien ket voi danh muc
         categoryId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Category',
-            required: true,
+            required: false, // Thay doi thanh false hoac xoa de loai bo danh muc
         },
     },
     {

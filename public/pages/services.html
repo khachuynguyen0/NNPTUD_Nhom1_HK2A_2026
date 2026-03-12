@@ -33,7 +33,7 @@
         <!-- Tieu de va nut them -->
         <div class="page-header">
             <h2>💆 Danh Sách Dịch Vụ</h2>
-            <button class="btn" onclick="openAddModal()">+ Thêm Dịch Vụ</button>
+            <a href="/pages/add-service.html" class="btn">+ Thêm Dịch Vụ</a>
         </div>
 
         <!-- Danh sach dich vu tu API -->
@@ -48,37 +48,37 @@
         <p>🌸 Loan Spa &copy; 2026</p>
     </footer>
 
-    <!-- ========== MODAL THEM / SUA DICH VU ========== -->
+    <!-- ========== MODAL SUA DICH VU ========== -->
     <div id="modalOverlay" class="modal-overlay">
         <div class="modal">
-            <h3 id="modalTitle">Thêm Dịch Vụ</h3>
+            <h3 id="modalTitle">Sửa Dịch Vụ</h3>
 
-            <div class="form-group">
-                <label>Tên dịch vụ *</label>
-                <input type="text" id="svcName" placeholder="VD: Massage thư giãn" />
-            </div>
+            <form id="editForm" onsubmit="saveService(event)">
+                <div class="form-group">
+                    <label>Tên dịch vụ *</label>
+                    <input type="text" id="svcName" placeholder="VD: Massage thư giãn" required />
+                </div>
 
-            <div class="form-group">
-                <label>Giá (VNĐ) *</label>
-                <input type="number" id="svcPrice" placeholder="VD: 200000" min="0" />
-            </div>
+                <div class="form-group">
+                    <label>Giá (VNĐ) *</label>
+                    <input type="number" id="svcPrice" placeholder="VD: 200000" min="0" required />
+                </div>
 
-            <div class="form-group">
-                <label>Danh mục</label>
-                <select id="svcCategory">
-                    <option value="">-- Chọn danh mục --</option>
-                </select>
-            </div>
+                <div class="form-group">
+                    <label>Hình ảnh mới (nếu muốn đổi)</label>
+                    <input type="file" id="svcImage" accept="image/*" />
+                </div>
 
-            <div class="form-group">
-                <label>Mô tả</label>
-                <textarea id="svcDesc" placeholder="Mô tả ngắn về dịch vụ..."></textarea>
-            </div>
+                <div class="form-group">
+                    <label>Mô tả</label>
+                    <textarea id="svcDesc" placeholder="Mô tả ngắn về dịch vụ..."></textarea>
+                </div>
 
-            <div class="form-actions">
-                <button class="btn btn-outline" onclick="closeModal()">Hủy</button>
-                <button class="btn" onclick="saveService()">Lưu</button>
-            </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal()">Hủy</button>
+                    <button type="submit" class="btn" id="btnSave">Lưu</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -122,11 +122,12 @@
 
                 grid.innerHTML = list.map(s => `
           <div class="service-card">
+            ${s.image ? `<img src="${s.image}" alt="${s.name}" style="width:100%; height:150px; object-fit:cover; border-radius:8px; margin-bottom:12px;">` : `<div style="width:100%; height:150px; background:#fce4ec; border-radius:8px; margin-bottom:12px; display:flex; align-items:center; justify-content:center; color:#c2185b;">Chưa có ảnh</div>`}
             <h3>${s.name}</h3>
             <div class="price">${formatPrice(s.price)}</div>
             <div class="desc">${s.description || 'Chưa có mô tả'}</div>
             <div class="actions">
-              <button class="btn btn-sm" onclick="openEditModal('${s._id}', '${escHtml(s.name)}', ${s.price}, '${escHtml(s.description)}', '${s.categoryId || ''}')">✏️ Sửa</button>
+              <button class="btn btn-sm" onclick="openEditModal('${s._id}', '${escHtml(s.name)}', ${s.price}, '${escHtml(s.description)}')">✏️ Sửa</button>
               <button class="btn btn-sm btn-danger" onclick="openDeleteModal('${s._id}')">🗑️ Xóa</button>
             </div>
           </div>
@@ -137,41 +138,14 @@
             }
         }
 
-        // ========== LOAD DANH MUC (cho select) ==========
-        async function loadCategories() {
-            try {
-                const res = await callApi('GET', '/api/categories');
-                const sel = document.getElementById('svcCategory');
-                (res.data || []).forEach(c => {
-                    const opt = document.createElement('option');
-                    opt.value = c._id;
-                    opt.textContent = c.name;
-                    sel.appendChild(opt);
-                });
-            } catch (err) {
-                console.error('[Services] loi load danh muc:', err.message);
-            }
-        }
-
-        // ========== MO MODAL THEM ==========
-        function openAddModal() {
-            editingId = null;
-            document.getElementById('modalTitle').textContent = 'Thêm Dịch Vụ';
-            document.getElementById('svcName').value = '';
-            document.getElementById('svcPrice').value = '';
-            document.getElementById('svcDesc').value = '';
-            document.getElementById('svcCategory').value = '';
-            document.getElementById('modalOverlay').classList.add('open');
-        }
-
         // ========== MO MODAL SUA ==========
-        function openEditModal(id, name, price, desc, catId) {
+        function openEditModal(id, name, price, desc) {
             editingId = id;
             document.getElementById('modalTitle').textContent = 'Sửa Dịch Vụ';
             document.getElementById('svcName').value = name;
             document.getElementById('svcPrice').value = price;
             document.getElementById('svcDesc').value = desc;
-            document.getElementById('svcCategory').value = catId;
+            document.getElementById('svcImage').value = ''; // Reset file input
             document.getElementById('modalOverlay').classList.add('open');
         }
 
@@ -179,33 +153,48 @@
             document.getElementById('modalOverlay').classList.remove('open');
         }
 
-        // ========== LUU DICH VU (them hoac sua) ==========
-        async function saveService() {
+        // ========== LUU DICH VU (Sua) ==========
+        async function saveService(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('btnSave');
+            btn.disabled = true;
+            btn.textContent = 'Đang lưu...';
+
             const name = document.getElementById('svcName').value.trim();
             const price = parseFloat(document.getElementById('svcPrice').value);
             const desc = document.getElementById('svcDesc').value.trim();
-            const categoryId = document.getElementById('svcCategory').value;
+            const imageFile = document.getElementById('svcImage').files[0];
 
-            if (!name) { showAlert('error', 'Vui lòng nhập tên dịch vụ!'); return; }
-            if (isNaN(price) || price < 0) { showAlert('error', 'Vui lòng nhập giá hợp lệ!'); return; }
-            if (!categoryId) { showAlert('error', 'Vui lòng chọn danh mục!'); return; }
-
-            const body = { name, price, description: desc, categoryId };
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('price', price);
+            if (desc) formData.append('description', desc);
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
 
             try {
                 if (editingId) {
-                    // Cap nhat dich vu
-                    await callApi('PUT', '/api/products/' + editingId, body);
-                    showAlert('success', '✅ Đã cập nhật dịch vụ!');
-                } else {
-                    // Them moi dich vu
-                    await callApi('POST', '/api/products', body);
-                    showAlert('success', '✅ Đã thêm dịch vụ mới!');
+                    const response = await fetch('/api/products/' + editingId, {
+                        method: 'PUT',
+                        body: formData
+                    });
+                    const result = await response.json();
+                    
+                    if (response.ok && result.success) {
+                        showAlert('success', '✅ Đã cập nhật dịch vụ!');
+                        closeModal();
+                        loadServices();
+                    } else {
+                        showAlert('error', '❌ Lỗi: ' + (result.message || 'Khong the luu data'));
+                    }
                 }
-                closeModal();
-                loadServices();
             } catch (err) {
                 showAlert('error', '❌ Lỗi: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Lưu';
             }
         }
 
@@ -249,7 +238,6 @@
         });
 
         // Khoi dong trang
-        loadCategories();
         loadServices();
     </script>
 

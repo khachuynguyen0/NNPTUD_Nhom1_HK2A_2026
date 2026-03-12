@@ -9,7 +9,6 @@ const getAll = async (req, res) => {
             filter.categoryId = req.query.categoryId;
         }
         const products = await Product.find(filter)
-            .populate('categoryId', 'name') // lay ten category kem theo
             .sort({ createdAt: -1 });
         console.log(`[Products] getAll - Tim thay ${products.length} san pham`);
         res.json({ success: true, data: products });
@@ -22,7 +21,7 @@ const getAll = async (req, res) => {
 // [GET] /api/products/:id - Lay 1 san pham theo id
 const getOne = async (req, res) => {
     try {
-        const product = await Product.findById(req.params.id).populate('categoryId', 'name');
+        const product = await Product.findById(req.params.id);
         if (!product) {
             return res.status(404).json({ success: false, message: 'Khong tim thay san pham' });
         }
@@ -37,8 +36,13 @@ const getOne = async (req, res) => {
 // [POST] /api/products - Tao san pham moi
 const create = async (req, res) => {
     try {
-        const { name, price, description, image, categoryId } = req.body;
-        const newProduct = new Product({ name, price, description, image, categoryId });
+        const { name, price, description } = req.body;
+        // Xu ly file anh duoc upload
+        let imagePath = '';
+        if (req.file) {
+            imagePath = '/images/services/' + req.file.filename;
+        }
+        const newProduct = new Product({ name, price, description, image: imagePath });
         const saved = await newProduct.save();
         console.log(`[Products] create - Da tao: ${saved.name}`);
         res.status(201).json({ success: true, data: saved });
@@ -51,10 +55,19 @@ const create = async (req, res) => {
 // [PUT] /api/products/:id - Cap nhat san pham
 const update = async (req, res) => {
     try {
-        const { name, price, description, image, categoryId } = req.body;
+        const { name, price, description } = req.body;
+        
+        // Chuan bi du lieu cap nhat
+        const updateData = { name, price, description };
+        
+        // Neu co upload file moi thi cap nhat anh
+        if (req.file) {
+            updateData.image = '/images/services/' + req.file.filename;
+        }
+        
         const updated = await Product.findByIdAndUpdate(
             req.params.id,
-            { name, price, description, image, categoryId },
+            updateData,
             { new: true, runValidators: true }
         );
         if (!updated) {
