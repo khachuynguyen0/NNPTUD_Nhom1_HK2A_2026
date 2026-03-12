@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loan Spa - Đặt Lịch</title>
+    <link rel="stylesheet" href="/css/style.css" />
+</head>
+
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="logo"><img src="/images/logo_loan_Spa.png" alt="Logo"></div>
+        <h1>Loan Spa</h1>
+        <span class="tagline">Hệ thống quản lý tiệm spa</span>
+    </header>
+
+    <!-- Nav -->
+    <nav class="nav">
+        <a href="/" class="nav-link">🏠 Trang Chủ</a>
+        <a href="/pages/services.html" class="nav-link">💆 Dịch Vụ</a>
+        <a href="/pages/booking.html" class="nav-link active">📅 Đặt Lịch</a>
+    </nav>
+
+    <!-- Main -->
+    <main class="main">
+
+        <!-- Alert thong bao -->
+        <div id="alert" class="alert"></div>
+
+        <!-- Form dat lich -->
+        <div class="booking-box">
+            <h2>📅 Đặt Lịch Hẹn</h2>
+
+            <div class="form-group">
+                <label>Họ và tên *</label>
+                <input type="text" id="custName" placeholder="Nguyễn Văn A" />
+            </div>
+
+            <div class="form-group">
+                <label>Số điện thoại *</label>
+                <input type="tel" id="custPhone" placeholder="0901 234 567" />
+            </div>
+
+            <div class="form-group">
+                <label>Dịch vụ *</label>
+                <select id="custService">
+                    <option value="">-- Chọn dịch vụ --</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Ngày & Giờ hẹn *</label>
+                <input type="datetime-local" id="custDate" />
+            </div>
+
+            <div class="form-group">
+                <label>Ghi chú</label>
+                <textarea id="custNote" placeholder="Yêu cầu đặc biệt, ghi chú thêm..."></textarea>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn" onclick="submitBooking()" style="width:100%;justify-content:center">
+                    📅 Xác Nhận Đặt Lịch
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>🌸 Loan Spa &copy; 2026</p>
+    </footer>
+
+    <script src="/js/api.js"></script>
+    <script>
+
+        // ========== HIEN THI ALERT ==========
+        function showAlert(type, msg) {
+            const el = document.getElementById('alert');
+            el.className = 'alert show alert-' + type;
+            el.textContent = msg;
+            // Cuon len tren de thay thong bao
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            if (type === 'success') {
+                setTimeout(() => { el.className = 'alert'; }, 5000);
+            }
+        }
+
+        // ========== LOAD DANH SACH DICH VU VÀO SELECT ==========
+        async function loadServices() {
+            try {
+                const res = await callApi('GET', '/api/products');
+                const sel = document.getElementById('custService');
+                const list = res.data || [];
+
+                if (list.length === 0) {
+                    sel.innerHTML = '<option value="">-- Chưa có dịch vụ nào --</option>';
+                    return;
+                }
+
+                list.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s._id;
+                    // Hien thi ten va gia dich vu
+                    const price = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(s.price);
+                    opt.textContent = `${s.name} — ${price}`;
+                    sel.appendChild(opt);
+                });
+            } catch (err) {
+                console.error('[Booking] loi load dich vu:', err.message);
+            }
+        }
+
+        // ========== DAT LICH ==========
+        async function submitBooking() {
+            const customerName = document.getElementById('custName').value.trim();
+            const phone = document.getElementById('custPhone').value.trim();
+            const serviceId = document.getElementById('custService').value;
+            const dateVal = document.getElementById('custDate').value;
+            const note = document.getElementById('custNote').value.trim();
+
+            // Kiem tra cac truong bat buoc
+            if (!customerName) { showAlert('error', '❌ Vui lòng nhập họ và tên!'); return; }
+            if (!phone) { showAlert('error', '❌ Vui lòng nhập số điện thoại!'); return; }
+            if (!serviceId) { showAlert('error', '❌ Vui lòng chọn dịch vụ!'); return; }
+            if (!dateVal) { showAlert('error', '❌ Vui lòng chọn ngày giờ hẹn!'); return; }
+
+            // Kiem tra ngay khong duoc trong qua khu
+            const appointmentDate = new Date(dateVal);
+            if (appointmentDate <= new Date()) {
+                showAlert('error', '❌ Ngày hẹn phải là thời gian trong tương lai!');
+                return;
+            }
+
+            const body = { customerName, phone, serviceId, appointmentDate: appointmentDate.toISOString(), note };
+
+            try {
+                await callApi('POST', '/api/appointments', body);
+                showAlert('success', '✅ Đặt lịch thành công! Chúng tôi sẽ liên hệ xác nhận sớm nhất.');
+                // Reset form sau khi dat lich thanh cong
+                document.getElementById('custName').value = '';
+                document.getElementById('custPhone').value = '';
+                document.getElementById('custService').value = '';
+                document.getElementById('custDate').value = '';
+                document.getElementById('custNote').value = '';
+            } catch (err) {
+                console.error('[Booking] loi dat lich:', err.message);
+                showAlert('error', '❌ Lỗi: ' + err.message);
+            }
+        }
+
+        // Dat gia tri nho nhat cho datetime-local la ngay hom nay
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById('custDate').min = now.toISOString().slice(0, 16);
+
+        // Khoi dong: load danh sach dich vu
+        loadServices();
+    </script>
+
+</body>
+
+</html>

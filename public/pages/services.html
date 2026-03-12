@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loan Spa - Dịch Vụ</title>
+    <link rel="stylesheet" href="/css/style.css" />
+</head>
+
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="logo"><img src="/images/logo_loan_Spa.png" alt="Logo"></div>
+        <h1>Loan Spa</h1>
+        <span class="tagline">Hệ thống quản lý tiệm spa</span>
+    </header>
+
+    <!-- Nav -->
+    <nav class="nav">
+        <a href="/" class="nav-link">🏠 Trang Chủ</a>
+        <a href="/pages/services.html" class="nav-link active">💆 Dịch Vụ</a>
+        <a href="/pages/booking.html" class="nav-link">📅 Đặt Lịch</a>
+    </nav>
+
+    <!-- Main -->
+    <main class="main">
+
+        <!-- Alert thong bao -->
+        <div id="alert" class="alert"></div>
+
+        <!-- Tieu de va nut them -->
+        <div class="page-header">
+            <h2>💆 Danh Sách Dịch Vụ</h2>
+            <button class="btn" onclick="openAddModal()">+ Thêm Dịch Vụ</button>
+        </div>
+
+        <!-- Danh sach dich vu tu API -->
+        <div id="serviceGrid" class="service-grid">
+            <p class="empty-msg">Đang tải dữ liệu...</p>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>🌸 Loan Spa &copy; 2026</p>
+    </footer>
+
+    <!-- ========== MODAL THEM / SUA DICH VU ========== -->
+    <div id="modalOverlay" class="modal-overlay">
+        <div class="modal">
+            <h3 id="modalTitle">Thêm Dịch Vụ</h3>
+
+            <div class="form-group">
+                <label>Tên dịch vụ *</label>
+                <input type="text" id="svcName" placeholder="VD: Massage thư giãn" />
+            </div>
+
+            <div class="form-group">
+                <label>Giá (VNĐ) *</label>
+                <input type="number" id="svcPrice" placeholder="VD: 200000" min="0" />
+            </div>
+
+            <div class="form-group">
+                <label>Danh mục</label>
+                <select id="svcCategory">
+                    <option value="">-- Chọn danh mục --</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Mô tả</label>
+                <textarea id="svcDesc" placeholder="Mô tả ngắn về dịch vụ..."></textarea>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn btn-outline" onclick="closeModal()">Hủy</button>
+                <button class="btn" onclick="saveService()">Lưu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== MODAL XAC NHAN XOA ========== -->
+    <div id="deleteOverlay" class="modal-overlay">
+        <div class="modal">
+            <h3>⚠️ Xác Nhận Xóa</h3>
+            <p style="color:#555;margin-bottom:20px">Bạn có chắc muốn xóa dịch vụ này không?</p>
+            <div class="form-actions">
+                <button class="btn btn-outline" onclick="closeDeleteModal()">Hủy</button>
+                <button class="btn btn-danger" onclick="confirmDelete()">Xóa</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        // Bien toan cuc
+        let editingId = null;   // id dang sua, null neu la them moi
+        let deletingId = null;  // id dang xoa
+
+        // ========== HIEN THI ALERT ==========
+        function showAlert(type, msg) {
+            const el = document.getElementById('alert');
+            el.className = 'alert show alert-' + type;
+            el.textContent = msg;
+            setTimeout(() => { el.className = 'alert'; }, 3500);
+        }
+
+        // ========== LOAD DANH SACH DICH VU ==========
+        async function loadServices() {
+            try {
+                const res = await callApi('GET', '/api/products');
+                const list = res.data;
+                const grid = document.getElementById('serviceGrid');
+
+                if (!list || list.length === 0) {
+                    grid.innerHTML = '<p class="empty-msg">Chưa có dịch vụ nào. Hãy thêm mới!</p>';
+                    return;
+                }
+
+                grid.innerHTML = list.map(s => `
+          <div class="service-card">
+            <h3>${s.name}</h3>
+            <div class="price">${formatPrice(s.price)}</div>
+            <div class="desc">${s.description || 'Chưa có mô tả'}</div>
+            <div class="actions">
+              <button class="btn btn-sm" onclick="openEditModal('${s._id}', '${escHtml(s.name)}', ${s.price}, '${escHtml(s.description)}', '${s.categoryId || ''}')">✏️ Sửa</button>
+              <button class="btn btn-sm btn-danger" onclick="openDeleteModal('${s._id}')">🗑️ Xóa</button>
+            </div>
+          </div>
+        `).join('');
+            } catch (err) {
+                console.error('[Services] loi load danh sach:', err.message);
+                document.getElementById('serviceGrid').innerHTML = '<p class="empty-msg">Lỗi tải dữ liệu!</p>';
+            }
+        }
+
+        // ========== LOAD DANH MUC (cho select) ==========
+        async function loadCategories() {
+            try {
+                const res = await callApi('GET', '/api/categories');
+                const sel = document.getElementById('svcCategory');
+                (res.data || []).forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c._id;
+                    opt.textContent = c.name;
+                    sel.appendChild(opt);
+                });
+            } catch (err) {
+                console.error('[Services] loi load danh muc:', err.message);
+            }
+        }
+
+        // ========== MO MODAL THEM ==========
+        function openAddModal() {
+            editingId = null;
+            document.getElementById('modalTitle').textContent = 'Thêm Dịch Vụ';
+            document.getElementById('svcName').value = '';
+            document.getElementById('svcPrice').value = '';
+            document.getElementById('svcDesc').value = '';
+            document.getElementById('svcCategory').value = '';
+            document.getElementById('modalOverlay').classList.add('open');
+        }
+
+        // ========== MO MODAL SUA ==========
+        function openEditModal(id, name, price, desc, catId) {
+            editingId = id;
+            document.getElementById('modalTitle').textContent = 'Sửa Dịch Vụ';
+            document.getElementById('svcName').value = name;
+            document.getElementById('svcPrice').value = price;
+            document.getElementById('svcDesc').value = desc;
+            document.getElementById('svcCategory').value = catId;
+            document.getElementById('modalOverlay').classList.add('open');
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('open');
+        }
+
+        // ========== LUU DICH VU (them hoac sua) ==========
+        async function saveService() {
+            const name = document.getElementById('svcName').value.trim();
+            const price = parseFloat(document.getElementById('svcPrice').value);
+            const desc = document.getElementById('svcDesc').value.trim();
+            const categoryId = document.getElementById('svcCategory').value;
+
+            if (!name) { showAlert('error', 'Vui lòng nhập tên dịch vụ!'); return; }
+            if (isNaN(price) || price < 0) { showAlert('error', 'Vui lòng nhập giá hợp lệ!'); return; }
+            if (!categoryId) { showAlert('error', 'Vui lòng chọn danh mục!'); return; }
+
+            const body = { name, price, description: desc, categoryId };
+
+            try {
+                if (editingId) {
+                    // Cap nhat dich vu
+                    await callApi('PUT', '/api/products/' + editingId, body);
+                    showAlert('success', '✅ Đã cập nhật dịch vụ!');
+                } else {
+                    // Them moi dich vu
+                    await callApi('POST', '/api/products', body);
+                    showAlert('success', '✅ Đã thêm dịch vụ mới!');
+                }
+                closeModal();
+                loadServices();
+            } catch (err) {
+                showAlert('error', '❌ Lỗi: ' + err.message);
+            }
+        }
+
+        // ========== XOA DICH VU ==========
+        function openDeleteModal(id) {
+            deletingId = id;
+            document.getElementById('deleteOverlay').classList.add('open');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteOverlay').classList.remove('open');
+        }
+
+        async function confirmDelete() {
+            try {
+                await callApi('DELETE', '/api/products/' + deletingId);
+                showAlert('success', '✅ Đã xóa dịch vụ!');
+                closeDeleteModal();
+                loadServices();
+            } catch (err) {
+                showAlert('error', '❌ Lỗi: ' + err.message);
+                closeDeleteModal();
+            }
+        }
+
+        // ========== UTILS ==========
+        function formatPrice(p) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p);
+        }
+
+        function escHtml(str) {
+            return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
+
+        // Dong modal khi click ben ngoai
+        document.getElementById('modalOverlay').addEventListener('click', function (e) {
+            if (e.target === this) closeModal();
+        });
+        document.getElementById('deleteOverlay').addEventListener('click', function (e) {
+            if (e.target === this) closeDeleteModal();
+        });
+
+        // Khoi dong trang
+        loadCategories();
+        loadServices();
+    </script>
+
+</body>
+
+</html>

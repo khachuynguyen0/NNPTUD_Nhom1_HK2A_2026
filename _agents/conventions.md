@@ -48,7 +48,7 @@ description: Quy tac va luu y chung cho project Quan Ly Tiem Spa - Loan Spa
   const connectDB = require('./config/db');
   connectDB();
   ```
-- **Phase hien tai**: chua ket noi Mongo — comment out phan tren trong `app.js`
+- **Phase hien tai**: DA ket noi Mongo Atlas — dotenv va connectDB da bat trong `app.js`
 
 ## API Endpoints Hien Co
 
@@ -62,6 +62,8 @@ description: Quy tac va luu y chung cho project Quan Ly Tiem Spa - Loan Spa
 | GET/PUT/DELETE | `/api/products/:id` | 1 san pham |
 | GET/POST | `/api/users` | Nguoi dung |
 | GET/PUT/DELETE | `/api/users/:id` | 1 nguoi dung |
+| GET/POST | `/api/appointments` | Lich hen |
+| GET/PUT/DELETE | `/api/appointments/:id` | 1 lich hen |
 
 ## Chay Project
 
@@ -69,3 +71,13 @@ description: Quy tac va luu y chung cho project Quan Ly Tiem Spa - Loan Spa
 npm start         # chay server (nodemon tu dong restart)
 # Mo trinh duyet: http://localhost:3000
 ```
+
+## Frontend Pages
+
+| Duong dan | File | Chuc nang |
+|-----------|------|-----------|
+| `/` | `public/index.html` | Trang chu, gioi thieu doanh nghiep |
+| `/pages/services.html` | `public/pages/services.html` | Danh sach dich vu, CRUD (them/sua/xoa) |
+| `/pages/booking.html` | `public/pages/booking.html` | Form dat lich hen |
+
+- File JS dung chung: `public/js/api.js` — ham `callApi(method, url, body)`
