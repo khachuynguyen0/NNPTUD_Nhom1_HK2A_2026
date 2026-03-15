@@ -121,7 +121,7 @@ const googleLogin = async (req, res) => {
         );
 
         console.log(`[Auth] googleLogin - Dang nhap bang Google thanh cong: ${email}`);
-        res.json({ success: true, token, role: user.role, userId: user._id });
+        res.json({ success: true, token, role: user.role, userId: user._id, username: user.username });
 
     } catch (error) {
         console.error('[Auth] googleLogin - Loi:', error.message);

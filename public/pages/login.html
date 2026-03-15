@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Loan Spa - Đăng Nhập</title>
     <link rel="stylesheet" href="/css/style.css" />
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         .auth-container {
             max-width: 420px;
@@ -32,6 +34,29 @@
             color: #c2185b;
             text-decoration: none;
             font-weight: 600;
+        }
+        /* Duong phan cach giua form va google */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #fce4ec;
+        }
+        .divider span {
+            color: #aaa;
+            font-size: 0.82rem;
+        }
+        /* Wrapper can chinh nut Google vao giua */
+        .google-btn-wrapper {
+            display: flex;
+            justify-content: center;
         }
     </style>
 </head>
@@ -61,6 +86,7 @@
         <div class="auth-container">
             <h2>🔐 Đăng Nhập</h2>
 
+            <!-- Form dang nhap thuong -->
             <form id="loginForm" onsubmit="handleLogin(event)">
                 <div class="form-group">
                     <label>Tên đăng nhập</label>
@@ -77,7 +103,28 @@
                 </div>
             </form>
 
-            <div class="auth-footer">
+            <!-- Duong ke "hoac" -->
+            <div class="divider"><span>hoặc</span></div>
+
+            <!-- Nut dang nhap Google (render tu Google GSI SDK) -->
+            <div class="google-btn-wrapper">
+                <div id="g_id_onload"
+                    data-client_id="327799824684-sp6ptted0kjnmk3korvijfb9dddt64bs.apps.googleusercontent.com"
+                    data-callback="handleGoogleLogin"
+                    data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin"
+                    data-type="standard"
+                    data-size="large"
+                    data-theme="outline"
+                    data-text="signin_with"
+                    data-shape="rectangular"
+                    data-logo_alignment="left"
+                    data-width="340">
+                </div>
+            </div>
+
+            <div class="auth-footer" style="margin-top: 20px;">
                 Chưa có tài khoản? <a href="/pages/register.html">Đăng Ký</a>
             </div>
         </div>
@@ -103,9 +150,25 @@
             const el = document.getElementById('alert');
             el.className = 'alert show alert-' + type;
             el.textContent = msg;
-            setTimeout(() => { el.className = 'alert'; }, 3500);
+            setTimeout(() => { el.className = 'alert'; }, 4000);
         }
 
+        // Ham luu thong tin dang nhap va chuyen trang
+        function saveLoginAndRedirect(data) {
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('role', data.role);
+            localStorage.setItem('username', data.username);
+            localStorage.setItem('userId', data.userId);
+
+            showAlert('success', '✅ Đăng nhập thành công! Đang chuyển trang...');
+
+            setTimeout(() => {
+                const params = new URLSearchParams(window.location.search);
+                window.location.href = params.get('redirect') || '/';
+            }, 1000);
+        }
+
+        // ========== DANG NHAP THUONG ==========
         async function handleLogin(e) {
             e.preventDefault();
             const btn = document.getElementById('btnLogin');
@@ -117,26 +180,30 @@
 
             try {
                 const data = await callApi('POST', '/api/auth/login', { username, password });
-
-                // Luu thong tin vao localStorage
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('role', data.role);
-                localStorage.setItem('username', data.username);
-                localStorage.setItem('userId', data.userId);
-
-                showAlert('success', '✅ Đăng nhập thành công! Đang chuyển trang...');
-
-                // Chuyen ve trang truoc hoac trang chu
-                setTimeout(() => {
-                    const params = new URLSearchParams(window.location.search);
-                    window.location.href = params.get('redirect') || '/';
-                }, 1000);
-
+                saveLoginAndRedirect(data);
             } catch (err) {
                 console.error('[Login] loi:', err.message);
                 showAlert('error', '❌ ' + err.message);
                 btn.disabled = false;
                 btn.textContent = 'Đăng Nhập';
+            }
+        }
+
+        // ========== DANG NHAP BANG GOOGLE ==========
+        // Ham nay duoc Google GSI goi lai sau khi user chon tai khoan Google
+        async function handleGoogleLogin(googleResponse) {
+            try {
+                console.log('[GoogleLogin] Nhan duoc credential tu Google, dang gui len server...');
+
+                // Gui credential (idToken) len backend de verify
+                const data = await callApi('POST', '/api/auth/google', {
+                    credential: googleResponse.credential
+                });
+
+                saveLoginAndRedirect(data);
+            } catch (err) {
+                console.error('[GoogleLogin] loi:', err.message);
+                showAlert('error', '❌ Đăng nhập Google thất bại: ' + err.message);
             }
         }
     </script>
