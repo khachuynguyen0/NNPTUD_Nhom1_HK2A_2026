@@ -133,13 +133,36 @@
 
         <!-- TAB BAR -->
         <div class="tab-bar">
-            <button class="tab-btn active" onclick="switchTab('services')">💆 Dịch Vụ</button>
+            <button class="tab-btn active" onclick="switchTab('appointments')">📅 Lịch Hẹn</button>
+            <button class="tab-btn" onclick="switchTab('services')">💆 Dịch Vụ</button>
             <button class="tab-btn" onclick="switchTab('accounts')">👥 Tài Khoản</button>
             <button class="tab-btn" onclick="switchTab('vouchers')">🎁 Voucher</button>
         </div>
 
+        <!-- ========== TAB 0: QUAN LY LICH HEN ========== -->
+        <div id="tab-appointments" class="tab-content active">
+            <div class="section-header">
+                <h3>Danh Sách Lịch Hẹn</h3>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Khách Hàng</th>
+                        <th>SĐT</th>
+                        <th>Dịch Vụ</th>
+                        <th>Thời Gian</th>
+                        <th>Trạng Thái</th>
+                        <th style="text-align:center">Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody id="appointmentTableBody">
+                    <tr><td colspan="6" style="text-align:center;color:#aaa;padding:30px">Đang tải...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
         <!-- ========== TAB 1: QUAN LY DICH VU ========== -->
-        <div id="tab-services" class="tab-content active">
+        <div id="tab-services" class="tab-content">
             <div class="section-header">
                 <h3>Danh Sách Dịch Vụ</h3>
                 <button class="btn" onclick="openAddServiceModal()">+ Thêm Dịch Vụ</button>
@@ -338,10 +361,14 @@
             document.getElementById('tab-' + name).classList.add('active');
             // Danh dau tab button tuong ung
             const btns = document.querySelectorAll('.tab-btn');
-            if (name === 'services') btns[0].classList.add('active');
-            else if (name === 'accounts') btns[1].classList.add('active');
+            if (name === 'appointments') {
+                btns[0].classList.add('active');
+                loadAppointments();
+            }
+            else if (name === 'services') btns[1].classList.add('active');
+            else if (name === 'accounts') btns[2].classList.add('active');
             else if (name === 'vouchers') {
-                btns[2].classList.add('active');
+                btns[3].classList.add('active');
                 loadVouchers(); // Tai lai voucher khi chuyen sang tab nay
                 loadUsersForSelect(); // Tai danh sach user cho dropdown cong diem
             }
@@ -356,6 +383,90 @@
         }
         function escHtml(str) {
             return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
+
+        // ============================================================
+        // PHAN 0: QUAN LY LICH HEN
+        // ============================================================
+
+        async function loadAppointments() {
+            try {
+                const res = await callApi('GET', '/api/appointments');
+                const list = res.data || [];
+                const tbody = document.getElementById('appointmentTableBody');
+
+                if (list.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:30px">Chưa có lịch hẹn nào</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = list.map(a => {
+                    let statusBadge = '';
+                    if (a.status === 'pending') statusBadge = '<span class="badge" style="background:#fff3cd;color:#856404">Chờ xác nhận</span>';
+                    else if (a.status === 'confirmed') statusBadge = '<span class="badge badge-user">Đã xác nhận</span>';
+                    else if (a.status === 'done') statusBadge = '<span class="badge badge-admin">Đã hoàn thành</span>';
+                    else if (a.status === 'cancelled') statusBadge = '<span class="badge" style="background:#f8d7da;color:#721c24">Đã hủy</span>';
+
+                    let paymentBadge = a.paymentStatus === 'paid' 
+                        ? '<span class="badge badge-admin" style="margin-top:4px;display:inline-block">Đã thanh toán</span>'
+                        : '<span class="badge" style="background:#e2e3e5;color:#383d41;margin-top:4px;display:inline-block">Chưa thanh toán</span>';
+
+                    let actions = '';
+                    if (a.status === 'pending') {
+                        actions = `
+                            <button class="btn btn-sm" style="background:#1976d2;color:white;border:none" onclick="updateApptStatus('${a._id}', 'confirmed')">✅ Xác Nhận</button>
+                            <button class="btn btn-sm btn-danger" onclick="updateApptStatus('${a._id}', 'cancelled')">❌ Hủy</button>
+                        `;
+                    } else if (a.status === 'confirmed' && a.paymentStatus !== 'paid') {
+                        actions = `
+                            <button class="btn btn-sm" style="background:#388e3c;color:white;border:none" onclick="payAppointment('${a._id}')">💰 Thanh Toán & Hoàn Thành</button>
+                            <button class="btn btn-sm btn-danger" onclick="updateApptStatus('${a._id}', 'cancelled')">❌ Hủy</button>
+                        `;
+                    }
+
+                    const serviceName = a.serviceId ? a.serviceId.name : 'Dịch vụ đã xóa';
+
+                    return `
+                        <tr>
+                            <td><b>${escHtml(a.customerName)}</b></td>
+                            <td>${escHtml(a.phone)}</td>
+                            <td>${escHtml(serviceName)}</td>
+                            <td>${new Date(a.appointmentDate).toLocaleString('vi-VN')}</td>
+                            <td>${statusBadge}<br/>${paymentBadge}</td>
+                            <td style="text-align:center;white-space:nowrap">${actions}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error('[Admin] loadAppointments - error:', err.message);
+                showAlert('error', '❌ Lỗi tải lịch hẹn: ' + err.message);
+            }
+        }
+
+        async function updateApptStatus(id, newStatus) {
+            if (!confirm(`Bạn có chắc muốn chuyển trạng thái thành "${newStatus}"?`)) return;
+            try {
+                await callApi('PUT', `/api/appointments/${id}`, { status: newStatus });
+                showAlert('success', '✅ Đã cập nhật trạng thái lịch hẹn!');
+                loadAppointments();
+            } catch (err) {
+                showAlert('error', '❌ Lỗi: ' + err.message);
+            }
+        }
+
+        async function payAppointment(id) {
+            if (!confirm('Xác nhận khách đã thanh toán? Thao tác này sẽ cộng điểm tích lũy cho tài khoản của khách (nếu có).')) return;
+            try {
+                const res = await callApi('POST', `/api/payments/pay/${id}`);
+                let msg = '✅ Thanh toán thành công!';
+                if (res.pointsEarned > 0) {
+                    msg += ` Đã cộng ${res.pointsEarned} điểm tích lũy cho khách hàng.`;
+                }
+                showAlert('success', msg);
+                loadAppointments();
+            } catch (err) {
+                showAlert('error', '❌ Lỗi: ' + err.message);
+            }
         }
 
         // ============================================================
@@ -771,6 +882,7 @@
         });
 
         // ========== KHOI DONG ==========
+        loadAppointments();
         loadServices();
         loadUsers();
     </script>
