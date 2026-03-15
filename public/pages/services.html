@@ -128,11 +128,7 @@
                     return;
                 }
 
-                // Nut sua/xoa chi hien voi admin
-                const adminBtns = isAdmin() ? `
-                    <button class="btn btn-sm" onclick="openEditModal('${s._id}', '${escHtml(s.name)}', ${s.price}, '${escHtml(s.description)}')">✏️ Sửa</button>
-                    <button class="btn btn-sm btn-danger" onclick="openDeleteModal('${s._id}')">\uD83D\uDDD1\uFE0F Xóa</button>
-                ` : '';
+                // Nut sua/xoa duoc render truc tiep ben trong map() phia duoi
 
                 grid.innerHTML = list.map(s => `
           <div class="service-card">
