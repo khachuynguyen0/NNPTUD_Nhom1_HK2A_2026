@@ -33,6 +33,46 @@
             text-decoration: none;
             font-weight: 600;
         }
+        /* Phan cach giua cac phuong thuc dang nhap */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0;
+            color: #aaa;
+            font-size: 0.85rem;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e0e0e0;
+        }
+        /* Nut dang nhap Google */
+        .btn-google {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 11px 20px;
+            border: 1.5px solid #dadce0;
+            border-radius: 8px;
+            background: white;
+            color: #3c4043;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        .btn-google:hover {
+            background: #f8f8f8;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .btn-google img {
+            width: 20px;
+            height: 20px;
+        }
     </style>
 </head>
 
@@ -77,6 +117,20 @@
                 </div>
             </form>
 
+            <!-- Phan cach -->
+            <div class="divider">hoặc</div>
+
+            <!-- Nut dang nhap Google -->
+            <div id="googleBtnWrapper">
+                <button class="btn-google" id="btnGoogle" onclick="handleGoogleLogin()">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
+                    Đăng Nhập bằng Google
+                </button>
+                <p id="googleNote" style="display:none;text-align:center;font-size:0.8rem;color:#aaa;margin-top:8px">
+                    ⚠️ Chưa cấu hình Google Client ID
+                </p>
+            </div>
+
             <div class="auth-footer">
                 Chưa có tài khoản? <a href="/pages/register.html">Đăng Ký</a>
             </div>
@@ -89,6 +143,8 @@
         <p>🌸 Loan Spa &copy; 2026</p>
     </footer>
 
+    <!-- Google Identity Services SDK -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="/js/api.js"></script>
     <script>
         // Neu da dang nhap roi thi chuyen thang ve trang truoc
@@ -99,6 +155,7 @@
 
         renderAuthNav();
 
+        // Hien thi thong bao
         function showAlert(type, msg) {
             const el = document.getElementById('alert');
             el.className = 'alert show alert-' + type;
@@ -106,6 +163,7 @@
             setTimeout(() => { el.className = 'alert'; }, 3500);
         }
 
+        // Dang nhap bang username + password
         async function handleLogin(e) {
             e.preventDefault();
             const btn = document.getElementById('btnLogin');
@@ -126,7 +184,6 @@
 
                 showAlert('success', '✅ Đăng nhập thành công! Đang chuyển trang...');
 
-                // Chuyen ve trang truoc hoac trang chu
                 setTimeout(() => {
                     const params = new URLSearchParams(window.location.search);
                     window.location.href = params.get('redirect') || '/';
@@ -139,6 +196,68 @@
                 btn.textContent = 'Đăng Nhập';
             }
         }
+
+        // Xu ly sau khi Google tra ve credential
+        async function onGoogleCredential(response) {
+            try {
+                const data = await callApi('POST', '/api/auth/google', { credential: response.credential });
+
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('role', data.role);
+                localStorage.setItem('username', data.username || '');
+                localStorage.setItem('userId', data.userId);
+
+                showAlert('success', '✅ Đăng nhập Google thành công!');
+                setTimeout(() => {
+                    const params = new URLSearchParams(window.location.search);
+                    window.location.href = params.get('redirect') || '/';
+                }, 1000);
+            } catch (err) {
+                console.error('[GoogleLogin] loi:', err.message);
+                showAlert('error', '❌ ' + err.message);
+            }
+        }
+
+        // Bat dau luong Google One Tap
+        function handleGoogleLogin() {
+            // Kiem tra Google SDK da load chua
+            if (typeof google === 'undefined' || !google.accounts) {
+                showAlert('error', '⚠️ Google SDK chưa tải xong, vui lòng chờ giây lát');
+                return;
+            }
+
+            // Lay GOOGLE_CLIENT_ID tu meta tag (inject tu server) hoac de nguoi dung nhan thong bao
+            const clientId = document.querySelector('meta[name="google-client-id"]')?.content;
+            if (!clientId) {
+                document.getElementById('googleNote').style.display = 'block';
+                showAlert('error', '⚠️ Chưa cấu hình GOOGLE_CLIENT_ID trong .env');
+                return;
+            }
+
+            google.accounts.id.initialize({
+                client_id: clientId,
+                callback: onGoogleCredential
+            });
+            google.accounts.id.prompt(); // Hien popup Google
+        }
+
+        // Doc GOOGLE_CLIENT_ID tu server va inject vao meta tag
+        fetch('/api/auth/google-client-id')
+            .then(r => r.json())
+            .then(data => {
+                if (data.clientId) {
+                    const meta = document.createElement('meta');
+                    meta.name = 'google-client-id';
+                    meta.content = data.clientId;
+                    document.head.appendChild(meta);
+                } else {
+                    // An nut google neu chua co client id
+                    document.getElementById('googleNote').style.display = 'block';
+                }
+            })
+            .catch(() => {
+                document.getElementById('googleNote').style.display = 'block';
+            });
     </script>
 
 </body>

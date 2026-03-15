@@ -129,4 +129,26 @@ const googleLogin = async (req, res) => {
     }
 }
 
-module.exports = { register, login, googleLogin };
+// [GET] /api/auth/me - Lay thong tin user dang dang nhap
+const getMe = async (req, res) => {
+    try {
+        // req.user duoc gan boi verifyToken middleware
+        const user = await User.findById(req.user.id).select('-password');
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'Khong tim thay nguoi dung' });
+        }
+        console.log(`[Auth] getMe - Lay thong tin: ${user.username}`);
+        res.json({ success: true, data: user });
+    } catch (error) {
+        console.error('[Auth] getMe - Loi:', error.message);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// [GET] /api/auth/google-client-id - Tra ve Client ID de frontend dung
+const getGoogleClientId = (req, res) => {
+    const clientId = process.env.GOOGLE_CLIENT_ID || '';
+    res.json({ clientId }); // Tra ve chuoi rong neu chua cau hinh
+};
+
+module.exports = { register, login, googleLogin, getMe, getGoogleClientId };
