@@ -14,6 +14,8 @@ var categoriesRouter = require('./routes/categories');
 var productsRouter = require('./routes/products');
 var usersRouter = require('./routes/users');
 var appointmentsRouter = require('./routes/appointments');
+var authRouter = require('./routes/auth');
+var paymentsRouter = require('./routes/payments');
 
 // Import middleware xu ly loi
 var errorHandler = require('./middlewares/errorHandler');
@@ -39,6 +41,8 @@ app.use('/api/categories', categoriesRouter);
 app.use('/api/products', productsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/appointments', appointmentsRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/payments', paymentsRouter);
 
 // Middleware xu ly loi (phai dat cuoi cung)
 app.use(errorHandler);

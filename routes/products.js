@@ -15,6 +15,7 @@ const storage = multer.diskStorage({
   }
 });
 const upload = multer({ storage: storage });
+const { verifyToken, verifyAdmin } = require('../middlewares/auth');
 
 // GET /api/products?categoryId=xxx (co the loc theo category)
 router.get('/', ctrl.getAll);
@@ -23,12 +24,12 @@ router.get('/', ctrl.getAll);
 router.get('/:id', ctrl.getOne);
 
 // POST /api/products
-router.post('/', upload.single('image'), ctrl.create);
+router.post('/', verifyToken, verifyAdmin, upload.single('image'), ctrl.create);
 
 // PUT /api/products/:id
-router.put('/:id', upload.single('image'), ctrl.update);
+router.put('/:id', verifyToken, verifyAdmin, upload.single('image'), ctrl.update);
 
 // DELETE /api/products/:id
-router.delete('/:id', ctrl.remove);
+router.delete('/:id', verifyToken, verifyAdmin, ctrl.remove);
 
 module.exports = router;

@@ -31,6 +31,23 @@ const appointmentSchema = new mongoose.Schema(
             type: String,
             default: '',
         },
+        // Nguoi dung (User) da dat lich (co the null neu khach vang lai chua dang nhap)
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: false,
+        },
+        // Tong tien (gia cua dich vu luc dat)
+        totalAmount: {
+            type: Number,
+            default: 0,
+        },
+        // Trang thai thanh toan
+        paymentStatus: {
+            type: String,
+            enum: ['pending', 'paid'],
+            default: 'pending',
+        },
         // Trang thai lich hen
         status: {
             type: String,

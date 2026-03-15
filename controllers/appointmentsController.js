@@ -37,7 +37,22 @@ const create = async (req, res) => {
         const { customerName, phone, serviceId, appointmentDate, note } = req.body;
         console.log('[Appointment] tao moi:', customerName, phone, serviceId, appointmentDate);
 
-        const newItem = new Appointment({ customerName, phone, serviceId, appointmentDate, note });
+        // Lay thong tin dich vu de lay gia
+        const Product = require('../models/Product');
+        const service = await Product.findById(serviceId);
+        if (!service) {
+            return res.status(404).json({ success: false, message: 'Khong tim thay dich vu nay' });
+        }
+
+        const newItem = new Appointment({ 
+            customerName, 
+            phone, 
+            serviceId, 
+            appointmentDate, 
+            note,
+            userId: req.user ? req.user.id : null, 
+            totalAmount: service.price 
+        });
         const saved = await newItem.save();
 
         res.status(201).json({ success: true, data: saved });
