@@ -104,8 +104,13 @@ function renderAuthNav() {
     if (!container) return;
 
     if (isLoggedIn()) {
-        // Hien thi ten va nut dang xuat
+        // Nut quan tri chi hien voi admin
+        const adminBtn = isAdmin()
+            ? `<a href="/pages/admin.html" class="btn btn-sm btn-admin">⚙️ Quản Trị</a>`
+            : '';
+
         container.innerHTML = `
+            ${adminBtn}
             <span class="nav-user">👤 ${getUsername()}</span>
             <button class="btn btn-sm btn-outline" onclick="logout()">Đăng Xuất</button>
         `;

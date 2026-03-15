@@ -84,6 +84,17 @@ body {
   opacity: 0.9;
 }
 
+/* Nut quan tri - mau vang/cam, noi bat */
+.btn-admin {
+  background: #ff8f00;
+  color: white;
+}
+
+.btn-admin:hover {
+  background: #e65100;
+  color: white;
+}
+
 /* ========== MAIN ========== */
 .main {
   flex: 1;

@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loan Spa - Quản Trị</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <style>
+        /* ====== TAB ====== */
+        .tab-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #fce4ec;
+            padding-bottom: 0;
+        }
+        .tab-btn {
+            padding: 10px 24px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #888;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: color 0.2s;
+            margin-bottom: -2px;
+        }
+        .tab-btn.active {
+            color: #c2185b;
+            border-bottom-color: #c2185b;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* ====== BANG DANH SACH ====== */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(194,24,91,0.06);
+        }
+        .data-table th {
+            background: #fce4ec;
+            color: #c2185b;
+            padding: 12px 14px;
+            text-align: left;
+            font-size: 0.88rem;
+        }
+        .data-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #fff0f5;
+            font-size: 0.88rem;
+            vertical-align: middle;
+        }
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table tr:hover td { background: #fff5f7; }
+
+        /* ====== SERVICE CARD TRONG ADMIN ====== */
+        .svc-img-thumb {
+            width: 56px;
+            height: 44px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid #fce4ec;
+        }
+        .no-img-thumb {
+            width: 56px;
+            height: 44px;
+            background: #fce4ec;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #c2185b;
+            font-size: 1.1rem;
+        }
+
+        /* ====== ROLE BADGE ====== */
+        .badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: bold;
+        }
+        .badge-admin { background: #fce4ec; color: #c2185b; }
+        .badge-user  { background: #e3f2fd; color: #1565c0; }
+
+        /* ====== PAGE HEADER ====== */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+        .section-header h3 {
+            color: #c2185b;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="logo"><img src="/images/logo_loan_Spa.png" alt="Logo"></div>
+        <h1>Loan Spa</h1>
+        <span class="tagline">Trang Quản Trị</span>
+    </header>
+
+    <!-- Nav -->
+    <nav class="nav">
+        <a href="/" class="nav-link">🏠 Trang Chủ</a>
+        <a href="/pages/services.html" class="nav-link">💆 Dịch Vụ</a>
+        <a href="/pages/booking.html" class="nav-link">📅 Đặt Lịch</a>
+        <a href="/pages/admin.html" class="nav-link active">⚙️ Quản Trị</a>
+        <div id="authNav"></div>
+    </nav>
+
+    <!-- Main -->
+    <main class="main">
+
+        <div id="alert" class="alert"></div>
+
+        <div class="page-header">
+            <h2>⚙️ Trang Quản Trị</h2>
+        </div>
+
+        <!-- TAB BAR -->
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('services')">💆 Dịch Vụ</button>
+            <button class="tab-btn" onclick="switchTab('accounts')">👥 Tài Khoản</button>
+        </div>
+
+        <!-- ========== TAB 1: QUAN LY DICH VU ========== -->
+        <div id="tab-services" class="tab-content active">
+            <div class="section-header">
+                <h3>Danh Sách Dịch Vụ</h3>
+                <button class="btn" onclick="openAddServiceModal()">+ Thêm Dịch Vụ</button>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Ảnh</th>
+                        <th>Tên Dịch Vụ</th>
+                        <th>Giá</th>
+                        <th>Mô Tả</th>
+                        <th style="text-align:center">Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody id="serviceTableBody">
+                    <tr><td colspan="5" style="text-align:center;color:#aaa;padding:30px">Đang tải...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ========== TAB 2: QUAN LY TAI KHOAN ========== -->
+        <div id="tab-accounts" class="tab-content">
+            <div class="section-header">
+                <h3>Danh Sách Tài Khoản</h3>
+                <span style="font-size:0.85rem;color:#888">Tổng: <b id="userCount">0</b> tài khoản</span>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Tên đăng nhập</th>
+                        <th>Email</th>
+                        <th>Quyền</th>
+                        <th>Ngày tạo</th>
+                        <th style="text-align:center">Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    <tr><td colspan="6" style="text-align:center;color:#aaa;padding:30px">Đang tải...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>🌸 Loan Spa &copy; 2026</p>
+    </footer>
+
+    <!-- ========== MODAL THEM/SUA DICH VU ========== -->
+    <div id="svcModalOverlay" class="modal-overlay">
+        <div class="modal">
+            <h3 id="svcModalTitle">Thêm Dịch Vụ</h3>
+            <form id="svcForm" onsubmit="saveService(event)">
+                <div class="form-group">
+                    <label>Tên dịch vụ *</label>
+                    <input type="text" id="svcName" placeholder="VD: Massage thư giãn" required />
+                </div>
+                <div class="form-group">
+                    <label>Giá (VNĐ) *</label>
+                    <input type="number" id="svcPrice" placeholder="VD: 200000" min="0" required />
+                </div>
+                <div class="form-group">
+                    <label>Hình ảnh <span id="imgLabel">(bắt buộc)</span></label>
+                    <input type="file" id="svcImage" accept="image/*" onchange="previewSvcImg(event)" />
+                    <img id="svcImgPreview" style="max-width:100%;max-height:160px;margin-top:10px;border-radius:8px;display:none" alt="preview" />
+                </div>
+                <div class="form-group">
+                    <label>Mô tả</label>
+                    <textarea id="svcDesc" placeholder="Mô tả ngắn về dịch vụ..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeSvcModal()">Hủy</button>
+                    <button type="submit" class="btn" id="btnSvcSave">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========== MODAL XAC NHAN XOA ========== -->
+    <div id="confirmOverlay" class="modal-overlay">
+        <div class="modal" style="max-width:360px">
+            <h3>⚠️ Xác Nhận Xóa</h3>
+            <p id="confirmMsg" style="color:#555;margin-bottom:20px"></p>
+            <div class="form-actions">
+                <button class="btn btn-outline" onclick="closeConfirm()">Hủy</button>
+                <button class="btn btn-danger" id="btnConfirmDel" onclick="confirmDelete()">Xóa</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        // Bao ve trang: chi admin moi duoc vao
+        requireAdmin();
+        renderAuthNav();
+
+        // ========== BIEN TOAN CUC ==========
+        let editingSvcId = null;  // id dich vu dang sua (null = them moi)
+        let deleteType = null;    // 'service' hoac 'user'
+        let deleteId = null;      // id dang xoa
+
+        // ========== ALERT ==========
+        function showAlert(type, msg) {
+            const el = document.getElementById('alert');
+            el.className = 'alert show alert-' + type;
+            el.textContent = msg;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => { el.className = 'alert'; }, 3500);
+        }
+
+        // ========== CHUYEN TAB ==========
+        function switchTab(name) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            document.getElementById('tab-' + name).classList.add('active');
+            // Danh dau tab button tuong ung
+            const btns = document.querySelectorAll('.tab-btn');
+            if (name === 'services') btns[0].classList.add('active');
+            else btns[1].classList.add('active');
+        }
+
+        // ========== FORMAT ==========
+        function formatPrice(p) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p);
+        }
+        function formatDate(d) {
+            return new Date(d).toLocaleDateString('vi-VN');
+        }
+        function escHtml(str) {
+            return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
+
+        // ============================================================
+        // PHAN 1: QUAN LY DICH VU
+        // ============================================================
+
+        // Load danh sach dich vu vao bang
+        async function loadServices() {
+            try {
+                const res = await callApi('GET', '/api/products');
+                const list = res.data || [];
+                const tbody = document.getElementById('serviceTableBody');
+
+                if (list.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:30px">Chưa có dịch vụ nào</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = list.map(s => `
+                    <tr>
+                        <td>
+                            ${s.image
+                                ? `<img src="${s.image}" class="svc-img-thumb" alt="${s.name}">`
+                                : `<div class="no-img-thumb">📷</div>`
+                            }
+                        </td>
+                        <td><b>${s.name}</b></td>
+                        <td>${formatPrice(s.price)}</td>
+                        <td style="max-width:200px;color:#666">${s.description || '—'}</td>
+                        <td style="text-align:center;white-space:nowrap">
+                            <button class="btn btn-sm" onclick="openEditServiceModal('${s._id}','${escHtml(s.name)}',${s.price},'${escHtml(s.description || '')}','${s.image || ''}')">✏️ Sửa</button>
+                            <button class="btn btn-sm btn-danger" onclick="askDelete('service','${s._id}','Dịch vụ: ${escHtml(s.name)}')">🗑️ Xóa</button>
+                        </td>
+                    </tr>
+                `).join('');
+                console.log(`[Admin] loadServices - Hien thi ${list.length} dich vu`);
+            } catch (err) {
+                console.error('[Admin] loadServices - loi:', err.message);
+                showAlert('error', '❌ Lỗi tải dịch vụ: ' + err.message);
+            }
+        }
+
+        // Mo modal them dich vu moi
+        function openAddServiceModal() {
+            editingSvcId = null;
+            document.getElementById('svcModalTitle').textContent = 'Thêm Dịch Vụ Mới';
+            document.getElementById('imgLabel').textContent = '(bắt buộc)';
+            document.getElementById('svcForm').reset();
+            document.getElementById('svcImgPreview').style.display = 'none';
+            document.getElementById('svcModalOverlay').classList.add('open');
+        }
+
+        // Mo modal sua dich vu
+        function openEditServiceModal(id, name, price, desc, img) {
+            editingSvcId = id;
+            document.getElementById('svcModalTitle').textContent = 'Sửa Dịch Vụ';
+            document.getElementById('imgLabel').textContent = '(để trống nếu không đổi ảnh)';
+            document.getElementById('svcName').value = name;
+            document.getElementById('svcPrice').value = price;
+            document.getElementById('svcDesc').value = desc;
+            document.getElementById('svcImage').value = '';
+            // Hien anh cu
+            const preview = document.getElementById('svcImgPreview');
+            if (img) {
+                preview.src = img;
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
+            }
+            document.getElementById('svcModalOverlay').classList.add('open');
+        }
+
+        function closeSvcModal() {
+            document.getElementById('svcModalOverlay').classList.remove('open');
+        }
+
+        // Xem truoc anh khi chon file
+        function previewSvcImg(e) {
+            const file = e.target.files[0];
+            const preview = document.getElementById('svcImgPreview');
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    preview.src = ev.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+
+        // Luu dich vu (them hoac sua)
+        async function saveService(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSvcSave');
+            btn.disabled = true;
+            btn.textContent = 'Đang lưu...';
+
+            const formData = new FormData();
+            formData.append('name', document.getElementById('svcName').value.trim());
+            formData.append('price', document.getElementById('svcPrice').value);
+            const desc = document.getElementById('svcDesc').value.trim();
+            if (desc) formData.append('description', desc);
+            const imgFile = document.getElementById('svcImage').files[0];
+            if (imgFile) formData.append('image', imgFile);
+
+            try {
+                if (editingSvcId) {
+                    // Sua
+                    await callApiForm('PUT', '/api/products/' + editingSvcId, formData);
+                    showAlert('success', '✅ Đã cập nhật dịch vụ!');
+                } else {
+                    // Them moi
+                    await callApiForm('POST', '/api/products', formData);
+                    showAlert('success', '✅ Đã thêm dịch vụ mới!');
+                }
+                closeSvcModal();
+                loadServices();
+            } catch (err) {
+                console.error('[Admin] saveService - loi:', err.message);
+                showAlert('error', '❌ ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Lưu';
+            }
+        }
+
+        // ============================================================
+        // PHAN 2: QUAN LY TAI KHOAN
+        // ============================================================
+
+        // Load danh sach user vao bang
+        async function loadUsers() {
+            try {
+                const res = await callApi('GET', '/api/users');
+                const list = res.data || [];
+                document.getElementById('userCount').textContent = list.length;
+                const tbody = document.getElementById('userTableBody');
+                const myId = localStorage.getItem('userId');
+
+                if (list.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:30px">Chưa có tài khoản nào</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = list.map((u, i) => {
+                    const isMe = u._id === myId;
+                    const roleBadge = u.role === 'admin'
+                        ? `<span class="badge badge-admin">Admin</span>`
+                        : `<span class="badge badge-user">User</span>`;
+
+                    const toggleRoleBtn = isMe ? '' : `
+                        <button class="btn btn-sm btn-outline" onclick="toggleRole('${u._id}','${u.role}','${escHtml(u.username)}')">
+                            ${u.role === 'admin' ? '👤 Hạ User' : '🔑 Lên Admin'}
+                        </button>`;
+
+                    const deleteBtn = isMe ? '' : `
+                        <button class="btn btn-sm btn-danger" onclick="askDelete('user','${u._id}','Tài khoản: ${escHtml(u.username)}')">🗑️ Xóa</button>`;
+
+                    return `
+                        <tr>
+                            <td>${i + 1}</td>
+                            <td><b>${u.username}</b>${isMe ? ' <span style="color:#e91e8c;font-size:0.75rem">(bạn)</span>' : ''}</td>
+                            <td>${u.email}</td>
+                            <td>${roleBadge}</td>
+                            <td>${formatDate(u.createdAt)}</td>
+                            <td style="text-align:center;white-space:nowrap">${toggleRoleBtn} ${deleteBtn}</td>
+                        </tr>
+                    `;
+                }).join('');
+                console.log(`[Admin] loadUsers - Hien thi ${list.length} tai khoan`);
+            } catch (err) {
+                console.error('[Admin] loadUsers - loi:', err.message);
+                showAlert('error', '❌ Lỗi tải tài khoản: ' + err.message);
+            }
+        }
+
+        // Doi role user (toggle admin <-> user)
+        async function toggleRole(userId, currentRole, username) {
+            const newRole = currentRole === 'admin' ? 'user' : 'admin';
+            const label = newRole === 'admin' ? 'Admin' : 'User';
+            if (!confirm(`Đổi quyền "${username}" thành ${label}?`)) return;
+
+            try {
+                await callApi('PUT', '/api/users/' + userId, { role: newRole });
+                showAlert('success', `✅ Đã đổi quyền "${username}" thành ${label}!`);
+                console.log(`[Admin] toggleRole - ${username}: ${currentRole} -> ${newRole}`);
+                loadUsers();
+            } catch (err) {
+                console.error('[Admin] toggleRole - loi:', err.message);
+                showAlert('error', '❌ ' + err.message);
+            }
+        }
+
+        // ============================================================
+        // CONFIRM XOA CHUNG
+        // ============================================================
+
+        function askDelete(type, id, label) {
+            deleteType = type;
+            deleteId = id;
+            document.getElementById('confirmMsg').textContent = `Bạn có chắc muốn xóa "${label}" không?`;
+            document.getElementById('confirmOverlay').classList.add('open');
+        }
+
+        function closeConfirm() {
+            document.getElementById('confirmOverlay').classList.remove('open');
+            deleteType = null;
+            deleteId = null;
+        }
+
+        async function confirmDelete() {
+            if (!deleteType || !deleteId) return;
+
+            const url = deleteType === 'service'
+                ? '/api/products/' + deleteId
+                : '/api/users/' + deleteId;
+
+            try {
+                await callApi('DELETE', url);
+                showAlert('success', '✅ Đã xóa thành công!');
+                console.log(`[Admin] confirmDelete - Da xoa ${deleteType} id: ${deleteId}`);
+                closeConfirm();
+                if (deleteType === 'service') loadServices();
+                else loadUsers();
+            } catch (err) {
+                console.error('[Admin] confirmDelete - loi:', err.message);
+                showAlert('error', '❌ ' + err.message);
+                closeConfirm();
+            }
+        }
+
+        // Dong modal khi click ben ngoai
+        document.getElementById('svcModalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closeSvcModal();
+        });
+        document.getElementById('confirmOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closeConfirm();
+        });
+
+        // ========== KHOI DONG ==========
+        loadServices();
+        loadUsers();
+    </script>
+
+</body>
+
+</html>

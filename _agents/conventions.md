@@ -81,6 +81,7 @@ npm start         # chay server (nodemon tu dong restart)
 | `/` | `public/index.html` | Trang chu, gioi thieu doanh nghiep |
 | `/pages/login.html` | `public/pages/login.html` | Dang nhap (luu token vao localStorage) |
 | `/pages/register.html` | `public/pages/register.html` | Dang ky tai khoan moi |
+| `/pages/admin.html` | `public/pages/admin.html` | Trang quan tri Admin (quan ly dich vu + tai khoan) |
 | `/pages/services.html` | `public/pages/services.html` | Danh sach dich vu, CRUD chi Admin |
 | `/pages/add-service.html` | `public/pages/add-service.html` | Them dich vu moi, chi Admin truy cap |
 | `/pages/booking.html` | `public/pages/booking.html` | Form dat lich hen |

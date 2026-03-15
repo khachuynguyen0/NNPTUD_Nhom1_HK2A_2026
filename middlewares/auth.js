@@ -7,7 +7,7 @@ const verifyToken = (req, res, next) => {
     // Thuong token se gui trong header: Authorization: Bearer <token>
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ success: false, message: 'Khong tim thay Token xac thuc. Vui long dang nhap.' });
+        return res.status(401).json({ success: false, message: 'Vui lòng đăng nhập để sử dụng chức năng này' });
     }
 
     const token = authHeader.split(' ')[1];
