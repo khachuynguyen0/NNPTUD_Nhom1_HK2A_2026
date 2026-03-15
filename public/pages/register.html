@@ -99,16 +99,17 @@
         <div class="auth-container">
             <h2>📝 Đăng Ký</h2>
 
-            <!-- Dang ky nhanh bang Google (dat tren cung) -->
-            <div id="googleBtnWrapper">
-                <button class="btn-google" id="btnGoogleReg" onclick="handleGoogleRegister()">
+            <!-- Nut dang nhap Google se duoc SDK render thang vao the div nay -->
+            <div id="googleBtnWrapper" style="margin-top:20px;display:flex;justify-content:center">
+                <!-- Fallback neu chua load -->
+                <button class="btn-google" id="btnGoogle" style="opacity:0.6;cursor:not-allowed">
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
-                    Đăng Ký / Đăng Nhập bằng Google
+                    Đang tải Google...
                 </button>
-                <p id="googleNote" style="display:none;text-align:center;font-size:0.8rem;color:#aaa;margin-top:8px">
-                    ⚠️ Chưa cấu hình Google Client ID
-                </p>
             </div>
+            <p id="googleNote" style="display:none;text-align:center;font-size:0.8rem;color:#aaa;margin-top:8px">
+                ⚠️ Chưa cấu hình Google Client ID
+            </p>
 
             <div class="divider">hoặc đăng ký bằng email</div>
 
@@ -181,20 +182,24 @@
             }
         }
 
-        // Bat dau dang ky bang Google
-        function handleGoogleRegister() {
-            if (typeof google === 'undefined' || !google.accounts) {
-                showAlert('error', '⚠️ Google SDK chưa tải xong, vui lòng chờ giây lát');
-                return;
-            }
-            const clientId = document.querySelector('meta[name="google-client-id"]')?.content;
-            if (!clientId) {
-                document.getElementById('googleNote').style.display = 'block';
-                showAlert('error', '⚠️ Chưa cấu hình GOOGLE_CLIENT_ID trong .env');
-                return;
-            }
-            google.accounts.id.initialize({ client_id: clientId, callback: onGoogleCredential });
-            google.accounts.id.prompt();
+        // Cau hinh SDK va render nut sau khi co Client ID
+        function setupGoogleSignIn(clientId) {
+            if (typeof google === 'undefined' || !google.accounts) return;
+
+            google.accounts.id.initialize({
+                client_id: clientId,
+                callback: onGoogleCredential
+            });
+
+            // Ghi de nut custom bang nut chuan cua Google de dam bao ty le hoat dong 100%
+            google.accounts.id.renderButton(
+                document.getElementById("googleBtnWrapper"),
+                { theme: "outline", size: "large", width: "100%", text: "signup_with" }
+            );
+            
+            // Xoa cai nut fake cu di
+            const btnFake = document.getElementById('btnGoogle');
+            if (btnFake) btnFake.style.display = 'none';
         }
 
         // Dang ky bang username + password
@@ -235,7 +240,7 @@
             }
         }
 
-        // Doc GOOGLE_CLIENT_ID tu server
+        // Doc GOOGLE_CLIENT_ID tu server va inject vao meta tag, sau do init nut Google
         fetch('/api/auth/google-client-id')
             .then(r => r.json())
             .then(data => {
@@ -244,8 +249,13 @@
                     meta.name = 'google-client-id';
                     meta.content = data.clientId;
                     document.head.appendChild(meta);
+                    
+                    // Render button lun sau khi fetch dc meta dt
+                    setTimeout(() => setupGoogleSignIn(data.clientId), 200);
                 } else {
                     document.getElementById('googleNote').style.display = 'block';
+                    const btnFake = document.getElementById('btnGoogle');
+                    if (btnFake) btnFake.innerHTML = '⚠️ Button bị vô hiệu (Thiếu Client ID)';
                 }
             })
             .catch(() => {
