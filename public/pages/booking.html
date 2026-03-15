@@ -22,6 +22,7 @@
         <a href="/" class="nav-link">🏠 Trang Chủ</a>
         <a href="/pages/services.html" class="nav-link">💆 Dịch Vụ</a>
         <a href="/pages/booking.html" class="nav-link active">📅 Đặt Lịch</a>
+        <div id="authNav"></div>
     </nav>
 
     <!-- Main -->
@@ -77,6 +78,8 @@
 
     <script src="/js/api.js"></script>
     <script>
+        // Hien thi thong tin dang nhap tren nav
+        renderAuthNav();
 
         // ========== HIEN THI ALERT ==========
         function showAlert(type, msg) {

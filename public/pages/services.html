@@ -22,6 +22,7 @@
         <a href="/" class="nav-link">🏠 Trang Chủ</a>
         <a href="/pages/services.html" class="nav-link active">💆 Dịch Vụ</a>
         <a href="/pages/booking.html" class="nav-link">📅 Đặt Lịch</a>
+        <div id="authNav"></div>
     </nav>
 
     <!-- Main -->
@@ -30,10 +31,10 @@
         <!-- Alert thong bao -->
         <div id="alert" class="alert"></div>
 
-        <!-- Tieu de va nut them -->
+        <!-- Tieu de va nut them (chi admin moi thay) -->
         <div class="page-header">
             <h2>💆 Danh Sách Dịch Vụ</h2>
-            <a href="/pages/add-service.html" class="btn">+ Thêm Dịch Vụ</a>
+            <a id="btnAddService" href="/pages/add-service.html" class="btn" style="display:none">+ Thêm Dịch Vụ</a>
         </div>
 
         <!-- Danh sach dich vu tu API -->
@@ -96,6 +97,13 @@
 
     <script src="/js/api.js"></script>
     <script>
+        // Khoi tao nav va quyen admin
+        renderAuthNav();
+        if (isAdmin()) {
+            document.getElementById('btnAddService').style.display = '';
+        }
+    </script>
+    <script>
         // Bien toan cuc
         let editingId = null;   // id dang sua, null neu la them moi
         let deletingId = null;  // id dang xoa
@@ -120,6 +128,12 @@
                     return;
                 }
 
+                // Nut sua/xoa chi hien voi admin
+                const adminBtns = isAdmin() ? `
+                    <button class="btn btn-sm" onclick="openEditModal('${s._id}', '${escHtml(s.name)}', ${s.price}, '${escHtml(s.description)}')">✏️ Sửa</button>
+                    <button class="btn btn-sm btn-danger" onclick="openDeleteModal('${s._id}')">\uD83D\uDDD1\uFE0F Xóa</button>
+                ` : '';
+
                 grid.innerHTML = list.map(s => `
           <div class="service-card">
             ${s.image ? `<img src="${s.image}" alt="${s.name}" style="width:100%; height:150px; object-fit:cover; border-radius:8px; margin-bottom:12px;">` : `<div style="width:100%; height:150px; background:#fce4ec; border-radius:8px; margin-bottom:12px; display:flex; align-items:center; justify-content:center; color:#c2185b;">Chưa có ảnh</div>`}
@@ -128,8 +142,8 @@
             <div class="desc">${s.description || 'Chưa có mô tả'}</div>
             <div class="actions">
               <a href="/pages/booking.html?serviceId=${s._id}" class="btn btn-sm btn-primary" style="text-decoration:none;">📅 Đặt Lịch</a>
-              <button class="btn btn-sm" onclick="openEditModal('${s._id}', '${escHtml(s.name)}', ${s.price}, '${escHtml(s.description)}')">✏️ Sửa</button>
-              <button class="btn btn-sm btn-danger" onclick="openDeleteModal('${s._id}')">🗑️ Xóa</button>
+              ${isAdmin() ? `<button class="btn btn-sm" onclick="openEditModal('${s._id}', '${escHtml(s.name)}', ${s.price}, '${escHtml(s.description)}')">✏️ Sửa</button>` : ''}
+              ${isAdmin() ? `<button class="btn btn-sm btn-danger" onclick="openDeleteModal('${s._id}')">🗑️ Xóa</button>` : ''}
             </div>
           </div>
         `).join('');
@@ -177,13 +191,9 @@
 
             try {
                 if (editingId) {
-                    const response = await fetch('/api/products/' + editingId, {
-                        method: 'PUT',
-                        body: formData
-                    });
-                    const result = await response.json();
-                    
-                    if (response.ok && result.success) {
+                    // Dung callApiForm de tu dong gan token
+                    const result = await callApiForm('PUT', '/api/products/' + editingId, formData);
+                    if (result.success) {
                         showAlert('success', '✅ Đã cập nhật dịch vụ!');
                         closeModal();
                         loadServices();

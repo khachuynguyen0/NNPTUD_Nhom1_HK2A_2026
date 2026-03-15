@@ -43,6 +43,7 @@
         <a href="/" class="nav-link">🏠 Trang Chủ</a>
         <a href="/pages/services.html" class="nav-link active">💆 Dịch Vụ</a>
         <a href="/pages/booking.html" class="nav-link">📅 Đặt Lịch</a>
+        <div id="authNav"></div>
     </nav>
 
     <!-- Main -->
@@ -93,7 +94,11 @@
         <p>🌸 Loan Spa &copy; 2026</p>
     </footer>
 
+    <script src="/js/api.js"></script>
     <script>
+        // Bao ve trang nay: chi admin moi duoc vao
+        requireAdmin();
+        renderAuthNav();
         // ========== HIEN THI ALERT ==========
         function showAlert(type, msg) {
             const el = document.getElementById('alert');
@@ -144,14 +149,10 @@
             }
 
             try {
-                const response = await fetch('/api/products', {
-                    method: 'POST',
-                    body: formData // Fetch tu xet Content-Type sang multipart/form-data cho FormData
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok && result.success) {
+                // Dung callApiForm de tu dong gan token vao request
+                const result = await callApiForm('POST', '/api/products', formData);
+
+                if (result.success) {
                     showAlert('success', '✅ Đã thêm dịch vụ thành công! Đang chuyển trang...');
                     setTimeout(() => {
                         window.location.href = '/pages/services.html';

@@ -69,7 +69,7 @@ const login = async (req, res) => {
         );
 
         console.log(`[Auth] login - Tai khoan truy cap: ${username}`);
-        res.json({ success: true, token, role: user.role, userId: user._id });
+        res.json({ success: true, token, role: user.role, userId: user._id, username: user.username });
     } catch (error) {
         console.error('[Auth] login - Loi:', error.message);
         res.status(500).json({ success: false, message: error.message });

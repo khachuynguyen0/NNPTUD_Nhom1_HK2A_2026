@@ -47,8 +47,18 @@ body {
   background: #c2185b;
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 4px;
   padding: 0 10px;
+}
+
+/* Day authNav sang ben phai */
+#authNav {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
 }
 
 .nav-link {
@@ -64,6 +74,14 @@ body {
 .nav-link.active {
   background: #880e4f;
   color: white;
+}
+
+/* Ten nguoi dung tren nav */
+.nav-user {
+  color: #ffe0eb;
+  font-size: 0.88rem;
+  padding: 6px 10px;
+  opacity: 0.9;
 }
 
 /* ========== MAIN ========== */

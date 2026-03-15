@@ -55,11 +55,13 @@ description: Quy tac va luu y chung cho project Quan Ly Tiem Spa - Loan Spa
 | Method | URL | Chuc nang |
 |--------|-----|-----------|
 | GET | `/api` | Kiem tra server |
+| POST | `/api/auth/register` | Dang ky tai khoan (role mac dinh: user) |
+| POST | `/api/auth/login` | Dang nhap — tra ve JWT token |
 | GET/POST | `/api/categories` | Danh muc |
 | GET/PUT/DELETE | `/api/categories/:id` | 1 danh muc |
 | GET | `/api/categories/:id/products` | San pham theo danh muc |
-| GET/POST | `/api/products` | San pham |
-| GET/PUT/DELETE | `/api/products/:id` | 1 san pham |
+| GET/POST | `/api/products` | San pham/dich vu (POST can quyen admin) |
+| GET/PUT/DELETE | `/api/products/:id` | 1 san pham (PUT/DELETE can quyen admin) |
 | GET/POST | `/api/users` | Nguoi dung |
 | GET/PUT/DELETE | `/api/users/:id` | 1 nguoi dung |
 | GET/POST | `/api/appointments` | Lich hen |
@@ -77,7 +79,12 @@ npm start         # chay server (nodemon tu dong restart)
 | Duong dan | File | Chuc nang |
 |-----------|------|-----------|
 | `/` | `public/index.html` | Trang chu, gioi thieu doanh nghiep |
-| `/pages/services.html` | `public/pages/services.html` | Danh sach dich vu, CRUD (them/sua/xoa) |
+| `/pages/login.html` | `public/pages/login.html` | Dang nhap (luu token vao localStorage) |
+| `/pages/register.html` | `public/pages/register.html` | Dang ky tai khoan moi |
+| `/pages/services.html` | `public/pages/services.html` | Danh sach dich vu, CRUD chi Admin |
+| `/pages/add-service.html` | `public/pages/add-service.html` | Them dich vu moi, chi Admin truy cap |
 | `/pages/booking.html` | `public/pages/booking.html` | Form dat lich hen |
 
-- File JS dung chung: `public/js/api.js` — ham `callApi(method, url, body)`
+- File JS dung chung: `public/js/api.js` — ham `callApi`, `callApiForm`, `renderAuthNav`, `requireAdmin`, `logout`
+- Token JWT duoc luu trong `localStorage`: key `token`, `role`, `username`, `userId`
+- Tai khoan admin mac dinh: `admin / 123456` (tu dong tao qua `scripts/seedAdmin.js`)

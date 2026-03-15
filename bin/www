@@ -7,6 +7,7 @@
 var app = require('../app');
 var debug = require('debug')('nnptud-nhom1-hk2a-2026:server');
 var http = require('http');
+var seedAdmin = require('../scripts/seedAdmin');
 
 /**
  * Get port from environment and store in Express.
@@ -28,6 +29,9 @@ var server = http.createServer(app);
 server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
+
+// Tao tai khoan admin mac dinh neu chua co
+seedAdmin();
 
 /**
  * Normalize a port into a number, string, or false.
