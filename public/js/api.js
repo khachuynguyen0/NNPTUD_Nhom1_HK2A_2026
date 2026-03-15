@@ -111,6 +111,7 @@ function renderAuthNav() {
 
         container.innerHTML = `
             ${adminBtn}
+            <a href="/pages/my-bookings.html" class="nav-link" style="padding:8px 14px;">📋 Lịch Của Tôi</a>
             <span class="nav-user">👤 ${getUsername()}</span>
             <button class="btn btn-sm btn-outline" onclick="logout()">Đăng Xuất</button>
         `;

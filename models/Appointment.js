@@ -15,6 +15,12 @@ const appointmentSchema = new mongoose.Schema(
             required: true,
             trim: true,
         },
+        // Email khach hang (de gui thong bao xac nhan)
+        email: {
+            type: String,
+            default: '',
+            trim: true,
+        },
         // Dich vu duoc chon (lien ket voi Product)
         serviceId: {
             type: mongoose.Schema.Types.ObjectId,

@@ -90,6 +90,13 @@
         .badge-admin { background: #fce4ec; color: #c2185b; }
         .badge-user  { background: #e3f2fd; color: #1565c0; }
 
+        /* ====== TRANG THAI LICH HEN ====== */
+        .status-badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.78rem; font-weight:bold; }
+        .status-pending    { background:#fff3e0; color:#e65100; }
+        .status-confirmed  { background:#e8f5e9; color:#2e7d32; }
+        .status-done       { background:#e3f2fd; color:#1565c0; }
+        .status-cancelled  { background:#fce4ec; color:#c62828; }
+
         /* ====== PAGE HEADER ====== */
         .section-header {
             display: flex;
@@ -135,6 +142,7 @@
         <div class="tab-bar">
             <button class="tab-btn active" onclick="switchTab('services')">💆 Dịch Vụ</button>
             <button class="tab-btn" onclick="switchTab('accounts')">👥 Tài Khoản</button>
+            <button class="tab-btn" onclick="switchTab('appointments')">📅 Lịch Hẹn</button>
         </div>
 
         <!-- ========== TAB 1: QUAN LY DICH VU ========== -->
@@ -182,7 +190,30 @@
             </table>
         </div>
 
-    </main>
+        <!-- ========== TAB 3: QUAN LY LICH HEN ========== -->
+        <div id="tab-appointments" class="tab-content">
+            <div class="section-header">
+                <h3>Danh Sách Lịch Hẹn</h3>
+                <span style="font-size:0.85rem;color:#888">Tổng: <b id="apptCount">0</b> lịch hẹn</span>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Khách Hàng</th>
+                        <th>Email / SĐT</th>
+                        <th>Dịch Vụ</th>
+                        <th>Ngày Hẹn</th>
+                        <th>Tổng Tiền</th>
+                        <th>Trạng Thái</th>
+                        <th style="text-align:center">Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody id="apptTableBody">
+                    <tr><td colspan="8" style="text-align:center;color:#aaa;padding:30px">Đang tải...</td></tr>
+                </tbody>
+            </table>
+        </div>
 
     <!-- Footer -->
     <footer class="footer">
@@ -255,12 +286,11 @@
         function switchTab(name) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-
             document.getElementById('tab-' + name).classList.add('active');
-            // Danh dau tab button tuong ung
-            const btns = document.querySelectorAll('.tab-btn');
-            if (name === 'services') btns[0].classList.add('active');
-            else btns[1].classList.add('active');
+            // Danh dau dung tab
+            const tabs = ['services', 'accounts', 'appointments'];
+            const idx = tabs.indexOf(name);
+            document.querySelectorAll('.tab-btn')[idx]?.classList.add('active');
         }
 
         // ========== FORMAT ==========
@@ -270,8 +300,23 @@
         function formatDate(d) {
             return new Date(d).toLocaleDateString('vi-VN');
         }
+        function formatDateTime(d) {
+            return new Date(d).toLocaleString('vi-VN', {
+                weekday: 'short', year: 'numeric', month: '2-digit',
+                day: '2-digit', hour: '2-digit', minute: '2-digit'
+            });
+        }
         function escHtml(str) {
             return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
+        function apptStatusLabel(s) {
+            const map = {
+                pending:   { text: '🟡 Chờ xác nhận', cls: 'status-pending' },
+                confirmed: { text: '🟢 Đã xác nhận',  cls: 'status-confirmed' },
+                done:      { text: '✅ Hoàn thành',    cls: 'status-done' },
+                cancelled: { text: '❌ Đã hủy',        cls: 'status-cancelled' },
+            };
+            return map[s] || { text: s, cls: '' };
         }
 
         // ============================================================
@@ -505,6 +550,87 @@
             }
         }
 
+        // ============================================================
+        // PHAN 3: QUAN LY LICH HEN
+        // ============================================================
+
+        // Load tat ca lich hen
+        async function loadAppointments() {
+            try {
+                const res = await callApi('GET', '/api/appointments');
+                const list = res.data || [];
+                document.getElementById('apptCount').textContent = list.length;
+                const tbody = document.getElementById('apptTableBody');
+
+                if (list.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:30px">Chưa có lịch hẹn nào</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = list.map((a, i) => {
+                    const st = apptStatusLabel(a.status);
+                    const svcName = a.serviceId?.name || '—';
+
+                    // Nut hành động theo trang thai
+                    let actionBtns = '';
+                    if (a.status === 'pending') {
+                        actionBtns = `
+                            <button class="btn btn-sm" style="background:#2e7d32;color:white" onclick="confirmAppt('${a._id}')">✅ Xác Nhận</button>
+                            <button class="btn btn-sm btn-danger" onclick="updateApptStatus('${a._id}','cancelled')">❌ Hủy</button>`;
+                    } else if (a.status === 'confirmed') {
+                        actionBtns = `
+                            <button class="btn btn-sm btn-primary" onclick="updateApptStatus('${a._id}','done')">🏁 Hoàn Thành</button>
+                            <button class="btn btn-sm btn-danger" onclick="updateApptStatus('${a._id}','cancelled')">❌ Hủy</button>`;
+                    }
+
+                    return `
+                        <tr>
+                            <td>${i + 1}</td>
+                            <td><b>${a.customerName}</b></td>
+                            <td style="font-size:0.8rem">${a.email || '—'}<br><span style="color:#888">${a.phone}</span></td>
+                            <td>${svcName}</td>
+                            <td>${formatDateTime(a.appointmentDate)}</td>
+                            <td>${formatPrice(a.totalAmount)}</td>
+                            <td><span class="status-badge ${st.cls}">${st.text}</span></td>
+                            <td style="text-align:center;white-space:nowrap">${actionBtns}</td>
+                        </tr>`;
+                }).join('');
+                console.log(`[Admin] loadAppointments - Hien thi ${list.length} lich hen`);
+            } catch (err) {
+                console.error('[Admin] loadAppointments - loi:', err.message);
+                showAlert('error', '❌ Lỗi tải lịch hẹn: ' + err.message);
+            }
+        }
+
+        // Xac nhan lich hen + gui email
+        async function confirmAppt(id) {
+            try {
+                const res = await callApi('POST', '/api/appointments/' + id + '/confirm');
+                const emailMsg = res.emailSent ? ' Email thông báo đã gửi!' : ' (Không có email để gửi)';
+                showAlert('success', '✅ Đã xác nhận lịch hẹn!' + emailMsg);
+                console.log(`[Admin] confirmAppt - id: ${id}, emailSent: ${res.emailSent}`);
+                loadAppointments();
+            } catch (err) {
+                console.error('[Admin] confirmAppt - loi:', err.message);
+                showAlert('error', '❌ ' + err.message);
+            }
+        }
+
+        // Cap nhat trang thai lich hen (done / cancelled)
+        async function updateApptStatus(id, status) {
+            const label = status === 'done' ? 'Hoàn thành' : 'Hủy';
+            if (!confirm(`Xác nhận "${label}" lịch hẹn này?`)) return;
+            try {
+                await callApi('PUT', '/api/appointments/' + id, { status });
+                showAlert('success', `✅ Đã cập nhật trạng thái!`);
+                console.log(`[Admin] updateApptStatus - id: ${id} -> ${status}`);
+                loadAppointments();
+            } catch (err) {
+                console.error('[Admin] updateApptStatus - loi:', err.message);
+                showAlert('error', '❌ ' + err.message);
+            }
+        }
+
         // Dong modal khi click ben ngoai
         document.getElementById('svcModalOverlay').addEventListener('click', function(e) {
             if (e.target === this) closeSvcModal();
@@ -516,6 +642,7 @@
         // ========== KHOI DONG ==========
         loadServices();
         loadUsers();
+        loadAppointments();
     </script>
 
 </body>

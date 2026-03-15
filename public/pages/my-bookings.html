@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loan Spa - Lịch Của Tôi</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <style>
+        .status-badge {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: bold;
+        }
+        .status-pending    { background: #fff3e0; color: #e65100; }
+        .status-confirmed  { background: #e8f5e9; color: #2e7d32; }
+        .status-done       { background: #e3f2fd; color: #1565c0; }
+        .status-cancelled  { background: #fce4ec; color: #c62828; }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(194,24,91,0.06);
+        }
+        .data-table th {
+            background: #fce4ec;
+            color: #c2185b;
+            padding: 12px 14px;
+            text-align: left;
+            font-size: 0.88rem;
+        }
+        .data-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #fff0f5;
+            font-size: 0.88rem;
+            vertical-align: middle;
+        }
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table tr:hover td { background: #fff5f7; }
+        .empty-msg {
+            text-align: center;
+            color: #aaa;
+            padding: 50px 0;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="logo"><img src="/images/logo_loan_Spa.png" alt="Logo"></div>
+        <h1>Loan Spa</h1>
+        <span class="tagline">Hệ thống quản lý tiệm spa</span>
+    </header>
+
+    <!-- Nav -->
+    <nav class="nav">
+        <a href="/" class="nav-link">🏠 Trang Chủ</a>
+        <a href="/pages/services.html" class="nav-link">💆 Dịch Vụ</a>
+        <a href="/pages/booking.html" class="nav-link">📅 Đặt Lịch</a>
+        <a href="/pages/my-bookings.html" class="nav-link active">📋 Lịch Của Tôi</a>
+        <div id="authNav"></div>
+    </nav>
+
+    <!-- Main -->
+    <main class="main">
+
+        <div id="alert" class="alert"></div>
+
+        <div class="page-header">
+            <h2>📋 Lịch Hẹn Của Tôi</h2>
+            <a href="/pages/booking.html" class="btn">+ Đặt Lịch Mới</a>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Dịch Vụ</th>
+                    <th>Ngày Hẹn</th>
+                    <th>Tổng Tiền</th>
+                    <th>Trạng Thái</th>
+                    <th style="text-align:center">Thao Tác</th>
+                </tr>
+            </thead>
+            <tbody id="bookingTableBody">
+                <tr><td colspan="6" class="empty-msg">Đang tải...</td></tr>
+            </tbody>
+        </table>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>🌸 Loan Spa &copy; 2026</p>
+    </footer>
+
+    <!-- Modal xac nhan huy lich -->
+    <div id="cancelOverlay" class="modal-overlay">
+        <div class="modal" style="max-width:360px">
+            <h3>⚠️ Xác Nhận Hủy Lịch</h3>
+            <p style="color:#555;margin-bottom:20px">Bạn có chắc muốn hủy lịch hẹn này không?</p>
+            <div class="form-actions">
+                <button class="btn btn-outline" onclick="closeCancelModal()">Giữ Lịch</button>
+                <button class="btn btn-danger" onclick="confirmCancel()">Hủy Lịch</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        // Yeu cau dang nhap moi duoc xem lich
+        if (!isLoggedIn()) {
+            window.location.href = '/pages/login.html?redirect=/pages/my-bookings.html';
+        }
+
+        renderAuthNav();
+
+        let cancelId = null;
+
+        function showAlert(type, msg) {
+            const el = document.getElementById('alert');
+            el.className = 'alert show alert-' + type;
+            el.textContent = msg;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => { el.className = 'alert'; }, 4000);
+        }
+
+        // Map trang thai sang text va class CSS
+        function statusLabel(s) {
+            const map = {
+                pending:   { text: '🟡 Chờ xác nhận', cls: 'status-pending' },
+                confirmed: { text: '🟢 Đã xác nhận',  cls: 'status-confirmed' },
+                done:      { text: '✅ Hoàn thành',    cls: 'status-done' },
+                cancelled: { text: '❌ Đã hủy',        cls: 'status-cancelled' },
+            };
+            return map[s] || { text: s, cls: '' };
+        }
+
+        function formatPrice(p) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p);
+        }
+        function formatDate(d) {
+            return new Date(d).toLocaleString('vi-VN', {
+                weekday: 'short', year: 'numeric', month: '2-digit',
+                day: '2-digit', hour: '2-digit', minute: '2-digit'
+            });
+        }
+
+        // Load lich hen cua user hien tai
+        async function loadMyBookings() {
+            try {
+                const res = await callApi('GET', '/api/appointments/my');
+                const list = res.data || [];
+                const tbody = document.getElementById('bookingTableBody');
+
+                if (list.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="empty-msg">
+                                Bạn chưa có lịch hẹn nào.<br>
+                                <a href="/pages/booking.html" class="btn" style="margin-top:16px;display:inline-block">📅 Đặt Lịch Ngay</a>
+                            </td>
+                        </tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = list.map((appt, i) => {
+                    const st = statusLabel(appt.status);
+                    const svcName = appt.serviceId?.name || 'Dịch vụ không xác định';
+                    // Chi cho huy khi con dang cho
+                    const cancelBtn = appt.status === 'pending'
+                        ? `<button class="btn btn-sm btn-danger" onclick="askCancel('${appt._id}')">❌ Hủy</button>`
+                        : '';
+                    return `
+                        <tr>
+                            <td>${i + 1}</td>
+                            <td><b>${svcName}</b></td>
+                            <td>${formatDate(appt.appointmentDate)}</td>
+                            <td>${formatPrice(appt.totalAmount)}</td>
+                            <td><span class="status-badge ${st.cls}">${st.text}</span></td>
+                            <td style="text-align:center">${cancelBtn}</td>
+                        </tr>`;
+                }).join('');
+                console.log(`[MyBookings] Hien thi ${list.length} lich hen`);
+            } catch (err) {
+                console.error('[MyBookings] loi load:', err.message);
+                showAlert('error', '❌ Lỗi tải danh sách lịch hẹn: ' + err.message);
+            }
+        }
+
+        // Huy lich (chi khi status = pending)
+        function askCancel(id) {
+            cancelId = id;
+            document.getElementById('cancelOverlay').classList.add('open');
+        }
+        function closeCancelModal() {
+            document.getElementById('cancelOverlay').classList.remove('open');
+            cancelId = null;
+        }
+        async function confirmCancel() {
+            if (!cancelId) return;
+            try {
+                await callApi('PUT', '/api/appointments/' + cancelId, { status: 'cancelled' });
+                showAlert('success', '✅ Đã hủy lịch hẹn.');
+                console.log('[MyBookings] Da huy lich id:', cancelId);
+                closeCancelModal();
+                loadMyBookings();
+            } catch (err) {
+                console.error('[MyBookings] loi huy lich:', err.message);
+                showAlert('error', '❌ ' + err.message);
+                closeCancelModal();
+            }
+        }
+
+        document.getElementById('cancelOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closeCancelModal();
+        });
+
+        // Khoi dong
+        loadMyBookings();
+    </script>
+
+</body>
+
+</html>

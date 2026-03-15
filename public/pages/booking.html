@@ -46,6 +46,11 @@
             </div>
 
             <div class="form-group">
+                <label>Email <span style="color:#aaa;font-size:0.82rem">(nhận xác nhận lịch qua email)</span></label>
+                <input type="email" id="custEmail" placeholder="example@gmail.com" />
+            </div>
+
+            <div class="form-group">
                 <label>Dịch vụ *</label>
                 <select id="custService">
                     <option value="">-- Chọn dịch vụ --</option>
@@ -129,6 +134,7 @@
         async function submitBooking() {
             const customerName = document.getElementById('custName').value.trim();
             const phone = document.getElementById('custPhone').value.trim();
+            const email = document.getElementById('custEmail').value.trim();
             const serviceId = document.getElementById('custService').value;
             const dateVal = document.getElementById('custDate').value;
             const note = document.getElementById('custNote').value.trim();
@@ -146,17 +152,22 @@
                 return;
             }
 
-            const body = { customerName, phone, serviceId, appointmentDate: appointmentDate.toISOString(), note };
+            const body = { customerName, phone, email, serviceId, appointmentDate: appointmentDate.toISOString(), note };
 
             try {
                 await callApi('POST', '/api/appointments', body);
-                showAlert('success', '✅ Đặt lịch thành công! Chúng tôi sẽ liên hệ xác nhận sớm nhất.');
-                // Reset form sau khi dat lich thanh cong
+                showAlert('success', '✅ Đặt lịch thành công! Chúng tôi sẽ xác nhận qua email sớm nhất.');
+                // Reset form
                 document.getElementById('custName').value = '';
                 document.getElementById('custPhone').value = '';
+                document.getElementById('custEmail').value = '';
                 document.getElementById('custService').value = '';
                 document.getElementById('custDate').value = '';
                 document.getElementById('custNote').value = '';
+                // Neu dang nhap thi goi sang trang lich cua toi
+                setTimeout(() => {
+                    if (isLoggedIn()) window.location.href = '/pages/my-bookings.html';
+                }, 2000);
             } catch (err) {
                 console.error('[Booking] loi dat lich:', err.message);
                 showAlert('error', '❌ Lỗi: ' + err.message);
