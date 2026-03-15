@@ -47,7 +47,7 @@ const getOne = async (req, res) => {
     }
 };
 
-// POST /api/appointments - tao lich hen moi
+// POST /api/appointments - tao lich hen moi (cho phep khach hoac user dang nhap dat lich)
 const create = async (req, res) => {
     try {
         const { customerName, phone, email, serviceId, appointmentDate, note } = req.body;
@@ -60,6 +60,20 @@ const create = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Khong tim thay dich vu nay' });
         }
 
+        // Xu ly token thu cong neu co (cho phep khach hoac user dang nhap dat lich)
+        let userId = null;
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            const token = authHeader.split(' ')[1];
+            try {
+                const jwt = require('jsonwebtoken');
+                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key_loan_spa');
+                userId = decoded.id;
+            } catch (err) {
+                return res.status(401).json({ success: false, message: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng xuất và đăng nhập lại để tích lũy điểm hẹn!' });
+            }
+        }
+
         const newItem = new Appointment({
             customerName,
             phone,
@@ -67,7 +81,7 @@ const create = async (req, res) => {
             serviceId,
             appointmentDate,
             note,
-            userId: req.user ? req.user.id : null,
+            userId: userId,
             totalAmount: service.price
         });
         const saved = await newItem.save();

@@ -140,13 +140,36 @@
 
         <!-- TAB BAR -->
         <div class="tab-bar">
-            <button class="tab-btn active" onclick="switchTab('services')">💆 Dịch Vụ</button>
+            <button class="tab-btn active" onclick="switchTab('appointments')">📅 Lịch Hẹn</button>
+            <button class="tab-btn" onclick="switchTab('services')">💆 Dịch Vụ</button>
             <button class="tab-btn" onclick="switchTab('accounts')">👥 Tài Khoản</button>
-            <button class="tab-btn" onclick="switchTab('appointments')">📅 Lịch Hẹn</button>
+            <button class="tab-btn" onclick="switchTab('vouchers')">🎁 Voucher</button>
+        </div>
+
+        <!-- ========== TAB 0: QUAN LY LICH HEN ========== -->
+        <div id="tab-appointments" class="tab-content active">
+            <div class="section-header">
+                <h3>Danh Sách Lịch Hẹn</h3>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Khách Hàng</th>
+                        <th>SĐT</th>
+                        <th>Dịch Vụ</th>
+                        <th>Thời Gian</th>
+                        <th>Trạng Thái</th>
+                        <th style="text-align:center">Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody id="appointmentTableBody">
+                    <tr><td colspan="6" style="text-align:center;color:#aaa;padding:30px">Đang tải...</td></tr>
+                </tbody>
+            </table>
         </div>
 
         <!-- ========== TAB 1: QUAN LY DICH VU ========== -->
-        <div id="tab-services" class="tab-content active">
+        <div id="tab-services" class="tab-content">
             <div class="section-header">
                 <h3>Danh Sách Dịch Vụ</h3>
                 <button class="btn" onclick="openAddServiceModal()">+ Thêm Dịch Vụ</button>
@@ -190,30 +213,53 @@
             </table>
         </div>
 
-        <!-- ========== TAB 3: QUAN LY LICH HEN ========== -->
-        <div id="tab-appointments" class="tab-content">
+        <!-- ========== TAB 3: QUAN LY VOUCHER ========== -->
+        <div id="tab-vouchers" class="tab-content">
+            <!-- Cong diem thu cong -->
+            <div class="profile-card" style="background:white;border:1px solid #fce4ec;border-radius:12px;padding:20px 24px;margin-bottom:20px">
+                <div class="section-header">
+                    <h3>⭐ Cộng Điểm Thủ Công Cho User</h3>
+                </div>
+                <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+                    <div class="form-group" style="margin:0;flex:1;min-width:160px">
+                        <label style="font-size:0.85rem">Chọn User</label>
+                        <select id="addPointsUserId" style="width:100%"></select>
+                    </div>
+                    <div class="form-group" style="margin:0;width:120px">
+                        <label style="font-size:0.85rem">Số điểm</label>
+                        <input type="number" id="addPointsAmount" placeholder="VD: 10" min="1" style="width:100%" />
+                    </div>
+                    <div class="form-group" style="margin:0;flex:2;min-width:160px">
+                        <label style="font-size:0.85rem">Lý do (tùy chọn)</label>
+                        <input type="text" id="addPointsReason" placeholder="VD: Khách hàng thân thiết" style="width:100%" />
+                    </div>
+                    <button class="btn" style="margin-bottom:1px" onclick="addPoints()">➕ Cộng Điểm</button>
+                </div>
+            </div>
+
+            <!-- Danh sach voucher he thong -->
             <div class="section-header">
-                <h3>Danh Sách Lịch Hẹn</h3>
-                <span style="font-size:0.85rem;color:#888">Tổng: <b id="apptCount">0</b> lịch hẹn</span>
+                <h3>🎟️ Danh Sách Voucher Hệ Thống</h3>
+                <button class="btn" onclick="openAddVoucherModal()">+ Tạo Voucher</button>
             </div>
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>#</th>
-                        <th>Khách Hàng</th>
-                        <th>Email / SĐT</th>
-                        <th>Dịch Vụ</th>
-                        <th>Ngày Hẹn</th>
-                        <th>Tổng Tiền</th>
+                        <th>Mã</th>
+                        <th>Giảm Giá</th>
+                        <th>Chi Phí (Điểm)</th>
+                        <th>Mô Tả</th>
                         <th>Trạng Thái</th>
                         <th style="text-align:center">Thao Tác</th>
                     </tr>
                 </thead>
-                <tbody id="apptTableBody">
-                    <tr><td colspan="8" style="text-align:center;color:#aaa;padding:30px">Đang tải...</td></tr>
+                <tbody id="voucherTableBody">
+                    <tr><td colspan="6" style="text-align:center;color:#aaa;padding:30px">Đang tải...</td></tr>
                 </tbody>
             </table>
         </div>
+
+    </main>
 
     <!-- Footer -->
     <footer class="footer">
@@ -262,6 +308,38 @@
         </div>
     </div>
 
+    <!-- ========== MODAL THEM/SUA VOUCHER ========== -->
+    <div id="voucherModalOverlay" class="modal-overlay">
+        <div class="modal" style="max-width:420px">
+            <h3 id="voucherModalTitle">Tạo Voucher Mới</h3>
+            <form id="voucherForm" onsubmit="saveVoucher(event)">
+                <div class="form-group">
+                    <label>Mã Voucher * <span style="font-size:0.8rem;color:#888">(VD: GIAM50K)</span></label>
+                    <input type="text" id="voucherCode" placeholder="VD: GIAM50K" style="text-transform:uppercase" required />
+                </div>
+                <div class="form-group">
+                    <label>Số tiền giảm (VNĐ) *</label>
+                    <input type="number" id="voucherDiscount" placeholder="VD: 50000" min="1000" required />
+                </div>
+                <div class="form-group">
+                    <label>Chi phí đổi (Điểm) *</label>
+                    <input type="number" id="voucherPointCost" placeholder="VD: 5" min="1" required />
+                </div>
+                <div class="form-group">
+                    <label>Mô tả</label>
+                    <input type="text" id="voucherDesc" placeholder="VD: Giảm 50K cho hóa đơn trên 200K" />
+                </div>
+                <div class="form-group" id="voucherActiveGroup" style="display:none">
+                    <label><input type="checkbox" id="voucherIsActive" /> Đang hoạt động</label>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeVoucherModal()">Hủy</button>
+                    <button type="submit" class="btn" id="btnVoucherSave">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="/js/api.js"></script>
     <script>
         // Bao ve trang: chi admin moi duoc vao
@@ -270,7 +348,7 @@
 
         // ========== BIEN TOAN CUC ==========
         let editingSvcId = null;  // id dich vu dang sua (null = them moi)
-        let deleteType = null;    // 'service' hoac 'user'
+        let deleteType = null;    // 'service', 'user', hoac 'voucher'
         let deleteId = null;      // id dang xoa
 
         // ========== ALERT ==========
@@ -287,10 +365,21 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.getElementById('tab-' + name).classList.add('active');
-            // Danh dau dung tab
-            const tabs = ['services', 'accounts', 'appointments'];
-            const idx = tabs.indexOf(name);
-            document.querySelectorAll('.tab-btn')[idx]?.classList.add('active');
+
+            // Danh dau tab button tuong ung va tai du lieu
+            const btns = document.querySelectorAll('.tab-btn');
+            if (name === 'appointments') {
+                btns[0].classList.add('active');
+                loadAppointments();
+            } else if (name === 'services') {
+                btns[1].classList.add('active');
+            } else if (name === 'accounts') {
+                btns[2].classList.add('active');
+            } else if (name === 'vouchers') {
+                btns[3].classList.add('active');
+                loadVouchers();
+                loadUsersForSelect();
+            }
         }
 
         // ========== FORMAT ==========
@@ -317,6 +406,105 @@
                 cancelled: { text: '❌ Đã hủy',        cls: 'status-cancelled' },
             };
             return map[s] || { text: s, cls: '' };
+        }
+
+        // ============================================================
+        // PHAN 0: QUAN LY LICH HEN
+        // ============================================================
+
+        async function loadAppointments() {
+            try {
+                const res = await callApi('GET', '/api/appointments');
+                const list = res.data || [];
+                const tbody = document.getElementById('appointmentTableBody');
+
+                if (list.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:30px">Chưa có lịch hẹn nào</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = list.map(a => {
+                    let statusBadge = '';
+                    if (a.status === 'pending') statusBadge = '<span class="badge" style="background:#fff3cd;color:#856404">Chờ xác nhận</span>';
+                    else if (a.status === 'confirmed') statusBadge = '<span class="badge badge-user">Đã xác nhận</span>';
+                    else if (a.status === 'done') statusBadge = '<span class="badge badge-admin">Đã hoàn thành</span>';
+                    else if (a.status === 'cancelled') statusBadge = '<span class="badge" style="background:#f8d7da;color:#721c24">Đã hủy</span>';
+
+                    let paymentBadge = a.paymentStatus === 'paid'
+                        ? '<span class="badge badge-admin" style="margin-top:4px;display:inline-block">Đã thanh toán</span>'
+                        : '<span class="badge" style="background:#e2e3e5;color:#383d41;margin-top:4px;display:inline-block">Chưa thanh toán</span>';
+
+                    let actions = '';
+                    if (a.status === 'pending') {
+                        actions = `
+                            <button class="btn btn-sm" style="background:#1976d2;color:white;border:none" onclick="confirmAppt('${a._id}')">✅ Xác Nhận</button>
+                            <button class="btn btn-sm btn-danger" onclick="updateApptStatus('${a._id}', 'cancelled')">❌ Hủy</button>
+                        `;
+                    } else if (a.status === 'confirmed' && a.paymentStatus !== 'paid') {
+                        actions = `
+                            <button class="btn btn-sm" style="background:#388e3c;color:white;border:none" onclick="payAppointment('${a._id}')">💰 Thanh Toán & Hoàn Thành</button>
+                            <button class="btn btn-sm btn-danger" onclick="updateApptStatus('${a._id}', 'cancelled')">❌ Hủy</button>
+                        `;
+                    }
+
+                    const serviceName = a.serviceId ? a.serviceId.name : 'Dịch vụ đã xóa';
+
+                    return `
+                        <tr>
+                            <td><b>${escHtml(a.customerName)}</b></td>
+                            <td>${escHtml(a.phone)}</td>
+                            <td>${escHtml(serviceName)}</td>
+                            <td>${new Date(a.appointmentDate).toLocaleString('vi-VN')}</td>
+                            <td>${statusBadge}<br/>${paymentBadge}</td>
+                            <td style="text-align:center;white-space:nowrap">${actions}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error('[Admin] loadAppointments - error:', err.message);
+                showAlert('error', '❌ Lỗi tải lịch hẹn: ' + err.message);
+            }
+        }
+
+        // Xac nhan lich hen + gui email thong bao
+        async function confirmAppt(id) {
+            try {
+                const res = await callApi('POST', '/api/appointments/' + id + '/confirm');
+                const emailMsg = res.emailSent ? ' Email thông báo đã gửi!' : ' (Không có email để gửi)';
+                showAlert('success', '✅ Đã xác nhận lịch hẹn!' + emailMsg);
+                console.log(`[Admin] confirmAppt - id: ${id}, emailSent: ${res.emailSent}`);
+                loadAppointments();
+            } catch (err) {
+                console.error('[Admin] confirmAppt - loi:', err.message);
+                showAlert('error', '❌ ' + err.message);
+            }
+        }
+
+        async function updateApptStatus(id, newStatus) {
+            const label = newStatus === 'done' ? 'Hoàn thành' : 'Hủy';
+            if (!confirm(`Xác nhận "${label}" lịch hẹn này?`)) return;
+            try {
+                await callApi('PUT', `/api/appointments/${id}`, { status: newStatus });
+                showAlert('success', '✅ Đã cập nhật trạng thái lịch hẹn!');
+                loadAppointments();
+            } catch (err) {
+                showAlert('error', '❌ Lỗi: ' + err.message);
+            }
+        }
+
+        async function payAppointment(id) {
+            if (!confirm('Xác nhận khách đã thanh toán? Thao tác này sẽ cộng điểm tích lũy cho tài khoản của khách (nếu có).')) return;
+            try {
+                const res = await callApi('POST', `/api/payments/pay/${id}`);
+                let msg = '✅ Thanh toán thành công!';
+                if (res.pointsEarned > 0) {
+                    msg += ` Đã cộng ${res.pointsEarned} điểm tích lũy cho khách hàng.`;
+                }
+                showAlert('success', msg);
+                loadAppointments();
+            } catch (err) {
+                showAlert('error', '❌ Lỗi: ' + err.message);
+            }
         }
 
         // ============================================================
@@ -532,17 +720,19 @@
         async function confirmDelete() {
             if (!deleteType || !deleteId) return;
 
-            const url = deleteType === 'service'
-                ? '/api/products/' + deleteId
-                : '/api/users/' + deleteId;
+            let url;
+            if (deleteType === 'service') url = '/api/products/' + deleteId;
+            else if (deleteType === 'user') url = '/api/users/' + deleteId;
+            else if (deleteType === 'voucher') url = '/api/payments/vouchers/' + deleteId;
 
             try {
                 await callApi('DELETE', url);
                 showAlert('success', '✅ Đã xóa thành công!');
-                console.log(`[Admin] confirmDelete - Da xoa ${deleteType} id: ${deleteId}`);
+                console.log(`[Admin] confirmDelete - Da xoa ${deleteType}: ${deleteId}`);
                 closeConfirm();
                 if (deleteType === 'service') loadServices();
-                else loadUsers();
+                else if (deleteType === 'user') loadUsers();
+                else if (deleteType === 'voucher') loadVouchers();
             } catch (err) {
                 console.error('[Admin] confirmDelete - loi:', err.message);
                 showAlert('error', '❌ ' + err.message);
@@ -551,82 +741,142 @@
         }
 
         // ============================================================
-        // PHAN 3: QUAN LY LICH HEN
+        // PHAN 3: QUAN LY VOUCHER
         // ============================================================
 
-        // Load tat ca lich hen
-        async function loadAppointments() {
+        let editingVoucherCode = null; // null = them moi, co gia tri = ma dang sua
+
+        // Tai danh sach tat ca voucher cho admin
+        async function loadVouchers() {
             try {
-                const res = await callApi('GET', '/api/appointments');
+                const res = await callApi('GET', '/api/payments/vouchers/all');
                 const list = res.data || [];
-                document.getElementById('apptCount').textContent = list.length;
-                const tbody = document.getElementById('apptTableBody');
+                const tbody = document.getElementById('voucherTableBody');
 
                 if (list.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:30px">Chưa có lịch hẹn nào</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:30px">Chưa có voucher nào</td></tr>';
                     return;
                 }
 
-                tbody.innerHTML = list.map((a, i) => {
-                    const st = apptStatusLabel(a.status);
-                    const svcName = a.serviceId?.name || '—';
-
-                    // Nut hành động theo trang thai
-                    let actionBtns = '';
-                    if (a.status === 'pending') {
-                        actionBtns = `
-                            <button class="btn btn-sm" style="background:#2e7d32;color:white" onclick="confirmAppt('${a._id}')">✅ Xác Nhận</button>
-                            <button class="btn btn-sm btn-danger" onclick="updateApptStatus('${a._id}','cancelled')">❌ Hủy</button>`;
-                    } else if (a.status === 'confirmed') {
-                        actionBtns = `
-                            <button class="btn btn-sm btn-primary" onclick="updateApptStatus('${a._id}','done')">🏁 Hoàn Thành</button>
-                            <button class="btn btn-sm btn-danger" onclick="updateApptStatus('${a._id}','cancelled')">❌ Hủy</button>`;
-                    }
-
-                    return `
-                        <tr>
-                            <td>${i + 1}</td>
-                            <td><b>${a.customerName}</b></td>
-                            <td style="font-size:0.8rem">${a.email || '—'}<br><span style="color:#888">${a.phone}</span></td>
-                            <td>${svcName}</td>
-                            <td>${formatDateTime(a.appointmentDate)}</td>
-                            <td>${formatPrice(a.totalAmount)}</td>
-                            <td><span class="status-badge ${st.cls}">${st.text}</span></td>
-                            <td style="text-align:center;white-space:nowrap">${actionBtns}</td>
-                        </tr>`;
-                }).join('');
-                console.log(`[Admin] loadAppointments - Hien thi ${list.length} lich hen`);
+                tbody.innerHTML = list.map(v => `
+                    <tr>
+                        <td><b style="color:#c2185b">${v.code}</b></td>
+                        <td>${formatPrice(v.discountAmount)}</td>
+                        <td>${v.pointCost} điểm</td>
+                        <td style="color:#666">${v.description || '—'}</td>
+                        <td>
+                            <span class="badge ${v.isActive ? 'badge-admin' : 'badge-user'}">
+                                ${v.isActive ? '✅ Hoạt động' : '⛔ Dừng'}
+                            </span>
+                        </td>
+                        <td style="text-align:center;white-space:nowrap">
+                            <button class="btn btn-sm" onclick="openEditVoucherModal('${v.code}', ${v.discountAmount}, ${v.pointCost}, '${escHtml(v.description || '')}', ${v.isActive})">✏️ Sửa</button>
+                            <button class="btn btn-sm btn-danger" onclick="askDelete('voucher','${v.code}','Voucher: ${v.code}')">🗑️ Xóa</button>
+                        </td>
+                    </tr>
+                `).join('');
+                console.log(`[Admin] loadVouchers - Hien thi ${list.length} voucher`);
             } catch (err) {
-                console.error('[Admin] loadAppointments - loi:', err.message);
-                showAlert('error', '❌ Lỗi tải lịch hẹn: ' + err.message);
+                console.error('[Admin] loadVouchers - loi:', err.message);
+                showAlert('error', '❌ Lỗi tải voucher: ' + err.message);
             }
         }
 
-        // Xac nhan lich hen + gui email
-        async function confirmAppt(id) {
+        // Mo modal them voucher moi
+        function openAddVoucherModal() {
+            editingVoucherCode = null;
+            document.getElementById('voucherModalTitle').textContent = 'Tạo Voucher Mới';
+            document.getElementById('voucherForm').reset();
+            document.getElementById('voucherCode').disabled = false;
+            document.getElementById('voucherActiveGroup').style.display = 'none';
+            document.getElementById('voucherModalOverlay').classList.add('open');
+        }
+
+        // Mo modal sua voucher
+        function openEditVoucherModal(code, discount, pointCost, desc, isActive) {
+            editingVoucherCode = code;
+            document.getElementById('voucherModalTitle').textContent = 'Sửa Voucher';
+            document.getElementById('voucherCode').value = code;
+            document.getElementById('voucherCode').disabled = true; // Khong sua code
+            document.getElementById('voucherDiscount').value = discount;
+            document.getElementById('voucherPointCost').value = pointCost;
+            document.getElementById('voucherDesc').value = desc;
+            document.getElementById('voucherIsActive').checked = isActive;
+            document.getElementById('voucherActiveGroup').style.display = 'block';
+            document.getElementById('voucherModalOverlay').classList.add('open');
+        }
+
+        function closeVoucherModal() {
+            document.getElementById('voucherModalOverlay').classList.remove('open');
+            editingVoucherCode = null;
+        }
+
+        // Luu voucher (them hoac sua)
+        async function saveVoucher(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnVoucherSave');
+            btn.disabled = true;
+            btn.textContent = 'Đang lưu...';
+
+            const code = document.getElementById('voucherCode').value.trim().toUpperCase();
+            const discountAmount = Number(document.getElementById('voucherDiscount').value);
+            const pointCost = Number(document.getElementById('voucherPointCost').value);
+            const description = document.getElementById('voucherDesc').value.trim();
+            const isActive = document.getElementById('voucherIsActive').checked;
+
             try {
-                const res = await callApi('POST', '/api/appointments/' + id + '/confirm');
-                const emailMsg = res.emailSent ? ' Email thông báo đã gửi!' : ' (Không có email để gửi)';
-                showAlert('success', '✅ Đã xác nhận lịch hẹn!' + emailMsg);
-                console.log(`[Admin] confirmAppt - id: ${id}, emailSent: ${res.emailSent}`);
-                loadAppointments();
+                if (editingVoucherCode) {
+                    // Cap nhat
+                    await callApi('PUT', '/api/payments/vouchers/' + editingVoucherCode, { discountAmount, pointCost, description, isActive });
+                    showAlert('success', '✅ Đã cập nhật voucher!');
+                } else {
+                    // Tao moi
+                    await callApi('POST', '/api/payments/vouchers', { code, discountAmount, pointCost, description });
+                    showAlert('success', '✅ Đã tạo voucher mới!');
+                }
+                closeVoucherModal();
+                loadVouchers();
             } catch (err) {
-                console.error('[Admin] confirmAppt - loi:', err.message);
+                console.error('[Admin] saveVoucher - loi:', err.message);
                 showAlert('error', '❌ ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Lưu';
             }
         }
 
-        // Cap nhat trang thai lich hen (done / cancelled)
-        async function updateApptStatus(id, status) {
-            const label = status === 'done' ? 'Hoàn thành' : 'Hủy';
-            if (!confirm(`Xác nhận "${label}" lịch hẹn này?`)) return;
+        // Tai danh sach user cho select box cong diem
+        async function loadUsersForSelect() {
             try {
-                await callApi('PUT', '/api/appointments/' + id, { status });
-                showAlert('success', `✅ Đã cập nhật trạng thái!`);
-                console.log(`[Admin] updateApptStatus - id: ${id} -> ${status}`);
-                loadAppointments();
+                const res = await callApi('GET', '/api/users');
+                const list = res.data || [];
+                const sel = document.getElementById('addPointsUserId');
+                sel.innerHTML = list.map(u => `
+                    <option value="${u._id}">${u.username} (${u.points || 0} điểm)</option>
+                `).join('');
             } catch (err) {
-                console.error('[Admin] updateApptStatus - loi:', err.message);
+                console.error('[Admin] loadUsersForSelect - loi:', err.message);
+            }
+        }
+
+        // Cong diem thu cong cho user
+        async function addPoints() {
+            const userId = document.getElementById('addPointsUserId').value;
+            const points = Number(document.getElementById('addPointsAmount').value);
+            const reason = document.getElementById('addPointsReason').value.trim();
+
+            if (!userId) { showAlert('error', '❌ Vui lòng chọn user'); return; }
+            if (!points || points < 1) { showAlert('error', '❌ Số điểm phải lớn hơn 0'); return; }
+
+            try {
+                const res = await callApi('POST', '/api/payments/add-points', { userId, points, reason });
+                showAlert('success', `✅ ${res.message} (Tổng: ${res.pointsTotal} điểm)`);
+                document.getElementById('addPointsAmount').value = '';
+                document.getElementById('addPointsReason').value = '';
+                loadUsersForSelect(); // Cap nhat lai so diem trong dropdown
+                console.log(`[Admin] addPoints - ${points} diem cho userId: ${userId}`);
+            } catch (err) {
+                console.error('[Admin] addPoints - loi:', err.message);
                 showAlert('error', '❌ ' + err.message);
             }
         }
@@ -638,11 +888,14 @@
         document.getElementById('confirmOverlay').addEventListener('click', function(e) {
             if (e.target === this) closeConfirm();
         });
+        document.getElementById('voucherModalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closeVoucherModal();
+        });
 
         // ========== KHOI DONG ==========
+        loadAppointments();
         loadServices();
         loadUsers();
-        loadAppointments();
     </script>
 
 </body>

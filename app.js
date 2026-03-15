@@ -19,11 +19,18 @@ var paymentsRouter = require('./routes/payments');
 
 // Import middleware xu ly loi
 var errorHandler = require('./middlewares/errorHandler');
+var app = express();
 
 // Ket noi MongoDB Atlas (bat khi da co MONGODB_URI trong .env)
-connectDB(); // Ket noi MongoDB Atlas
+async function main() {
+    try {
+        await connectDB();
+    } catch (error) {
+        console.error('>>> Loi ket noi MongoDB:', error.message);
+        process.exit(1); // Dung server neu khong ket noi duoc DB
+    }
+}
 
-var app = express();
 
 // Middleware co ban
 app.use(cors());           // Cho phep Frontend goi API tu domain khac
@@ -46,5 +53,6 @@ app.use('/api/payments', paymentsRouter);
 
 // Middleware xu ly loi (phai dat cuoi cung)
 app.use(errorHandler);
+main(); // Ket noi MongoDB Atlas
 
 module.exports = app;

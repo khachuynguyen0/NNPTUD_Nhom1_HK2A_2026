@@ -13,8 +13,8 @@ router.get('/', verifyToken, verifyAdmin, ctrl.getAll);
 // GET /api/appointments/:id — Admin xem 1 lich hen
 router.get('/:id', verifyToken, verifyAdmin, ctrl.getOne);
 
-// POST /api/appointments — User tao lich hen moi (can dang nhap)
-router.post('/', verifyToken, ctrl.create);
+// POST /api/appointments — cho phep khach hoac user dat lich (controller tu xu ly JWT neu co)
+router.post('/', ctrl.create);
 
 // POST /api/appointments/:id/confirm — Admin xac nhan lich hen + gui email
 router.post('/:id/confirm', verifyToken, verifyAdmin, ctrl.confirm);

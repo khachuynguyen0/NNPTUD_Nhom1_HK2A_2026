@@ -6,8 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Loan Spa - Đăng Nhập</title>
     <link rel="stylesheet" href="/css/style.css" />
-    <!-- Google Identity Services -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         .auth-container {
             max-width: 420px;
@@ -58,6 +56,31 @@
             display: flex;
             justify-content: center;
         }
+        /* Nut fallback khi chua load SDK */
+        .btn-google {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 11px 20px;
+            border: 1.5px solid #dadce0;
+            border-radius: 8px;
+            background: white;
+            color: #3c4043;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        .btn-google:hover {
+            background: #f8f8f8;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .btn-google img {
+            width: 20px;
+            height: 20px;
+        }
     </style>
 </head>
 
@@ -106,23 +129,17 @@
             <!-- Duong ke "hoac" -->
             <div class="divider"><span>hoặc</span></div>
 
-            <!-- Nut dang nhap Google (render tu Google GSI SDK) -->
-            <div class="google-btn-wrapper">
-                <div id="g_id_onload"
-                    data-client_id="327799824684-sp6ptted0kjnmk3korvijfb9dddt64bs.apps.googleusercontent.com"
-                    data-callback="handleGoogleLogin"
-                    data-auto_prompt="false">
-                </div>
-                <div class="g_id_signin"
-                    data-type="standard"
-                    data-size="large"
-                    data-theme="outline"
-                    data-text="signin_with"
-                    data-shape="rectangular"
-                    data-logo_alignment="left"
-                    data-width="340">
-                </div>
+            <!-- Nut dang nhap Google - SDK se render vao day -->
+            <div id="googleBtnWrapper" class="google-btn-wrapper">
+                <!-- Fallback neu chua load SDK -->
+                <button class="btn-google" id="btnGoogle" style="opacity:0.6;cursor:not-allowed">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
+                    Đang tải Google...
+                </button>
             </div>
+            <p id="googleNote" style="display:none;text-align:center;font-size:0.8rem;color:#aaa;margin-top:8px">
+                ⚠️ Chưa cấu hình Google Client ID
+            </p>
 
             <div class="auth-footer" style="margin-top: 20px;">
                 Chưa có tài khoản? <a href="/pages/register.html">Đăng Ký</a>
@@ -136,6 +153,8 @@
         <p>🌸 Loan Spa &copy; 2026</p>
     </footer>
 
+    <!-- Google Identity Services SDK -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="/js/api.js"></script>
     <script>
         // Neu da dang nhap roi thi chuyen thang ve trang truoc
@@ -146,6 +165,7 @@
 
         renderAuthNav();
 
+        // Hien thi thong bao
         function showAlert(type, msg) {
             const el = document.getElementById('alert');
             el.className = 'alert show alert-' + type;
@@ -190,22 +210,58 @@
         }
 
         // ========== DANG NHAP BANG GOOGLE ==========
-        // Ham nay duoc Google GSI goi lai sau khi user chon tai khoan Google
-        async function handleGoogleLogin(googleResponse) {
+        // Ham nay duoc Google SDK goi lai sau khi user chon tai khoan Google
+        async function onGoogleCredential(response) {
             try {
-                console.log('[GoogleLogin] Nhan duoc credential tu Google, dang gui len server...');
-
-                // Gui credential (idToken) len backend de verify
-                const data = await callApi('POST', '/api/auth/google', {
-                    credential: googleResponse.credential
-                });
-
+                const data = await callApi('POST', '/api/auth/google', { credential: response.credential });
                 saveLoginAndRedirect(data);
             } catch (err) {
                 console.error('[GoogleLogin] loi:', err.message);
                 showAlert('error', '❌ Đăng nhập Google thất bại: ' + err.message);
             }
         }
+
+        // Bat dau luong Google One Tap
+        function setupGoogleSignIn(clientId) {
+            if (typeof google === 'undefined' || !google.accounts) return;
+
+            google.accounts.id.initialize({
+                client_id: clientId,
+                callback: onGoogleCredential
+            });
+
+            // Render nut chuan cua Google vao wrapper
+            google.accounts.id.renderButton(
+                document.getElementById('googleBtnWrapper'),
+                { theme: 'outline', size: 'large', width: '340', text: 'signin_with' }
+            );
+
+            // Xoa nut fake cu di
+            const btnFake = document.getElementById('btnGoogle');
+            if (btnFake) btnFake.style.display = 'none';
+        }
+
+        // Doc GOOGLE_CLIENT_ID tu server, sau do init nut Google
+        fetch('/api/auth/google-client-id')
+            .then(r => r.json())
+            .then(data => {
+                if (data.clientId) {
+                    const meta = document.createElement('meta');
+                    meta.name = 'google-client-id';
+                    meta.content = data.clientId;
+                    document.head.appendChild(meta);
+
+                    // Render button sau khi fetch duoc clientId
+                    setTimeout(() => setupGoogleSignIn(data.clientId), 200);
+                } else {
+                    document.getElementById('googleNote').style.display = 'block';
+                    const btnFake = document.getElementById('btnGoogle');
+                    if (btnFake) btnFake.innerHTML = '⚠️ Button bị vô hiệu (Thiếu Client ID)';
+                }
+            })
+            .catch(() => {
+                document.getElementById('googleNote').style.display = 'block';
+            });
     </script>
 
 </body>
