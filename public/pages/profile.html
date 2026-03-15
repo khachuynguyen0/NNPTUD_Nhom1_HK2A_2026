@@ -133,8 +133,7 @@
         <a href="/" class="nav-link">🏠 Trang Chủ</a>
         <a href="/pages/services.html" class="nav-link">💆 Dịch Vụ</a>
         <a href="/pages/booking.html" class="nav-link">📅 Đặt Lịch</a>
-        <a href="/pages/profile.html" class="nav-link active">👤 Hồ Sơ</a>
-        <div id="authNav"></div>
+        <div id="authNav" style="display:flex; gap:10px; align-items:center; margin-left:auto"></div>
     </nav>
 
     <!-- Main -->
@@ -194,9 +193,11 @@
 
     <script src="/js/api.js"></script>
     <script>
-        // Yeu cau dang nhap moi duoc vao trang nay
+        // Yeu cau dang nhap va chi cho phep role user
         if (!isLoggedIn()) {
             window.location.href = '/pages/login.html?redirect=/pages/profile.html';
+        } else if (isAdmin()) {
+            window.location.href = '/'; // Admin khong duoc vao muc doi qua (ho so user)
         }
 
         renderAuthNav();

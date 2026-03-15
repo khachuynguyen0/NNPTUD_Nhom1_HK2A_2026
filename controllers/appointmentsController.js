@@ -44,13 +44,27 @@ const create = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Khong tim thay dich vu nay' });
         }
 
+        // Xu ly token thu cong neu co (cho phep khach hoac user dang nhap dat lich)
+        let userId = null;
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            const token = authHeader.split(' ')[1];
+            try {
+                const jwt = require('jsonwebtoken');
+                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'loan_spa_key_123');
+                userId = decoded.id;
+            } catch (err) {
+                console.log('[Appointment] Token loi hoac het han (bo qua, dat lich nhu khach):', err.message);
+            }
+        }
+
         const newItem = new Appointment({ 
             customerName, 
             phone, 
             serviceId, 
             appointmentDate, 
             note,
-            userId: req.user ? req.user.id : null, 
+            userId: userId, 
             totalAmount: service.price 
         });
         const saved = await newItem.save();

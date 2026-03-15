@@ -109,7 +109,13 @@ function renderAuthNav() {
             ? `<a href="/pages/admin.html" class="btn btn-sm btn-admin">⚙️ Quản Trị</a>`
             : '';
 
+        // Nut ho so / doi qua chi hien voi user
+        const profileBtn = !isAdmin()
+            ? `<a href="/pages/profile.html" class="btn btn-sm" style="background:#e91e8c;color:white;border:none">🎁 Đổi Quà (Hồ Sơ)</a>`
+            : '';
+
         container.innerHTML = `
+            ${profileBtn}
             ${adminBtn}
             <span class="nav-user">👤 ${getUsername()}</span>
             <button class="btn btn-sm btn-outline" onclick="logout()">Đăng Xuất</button>

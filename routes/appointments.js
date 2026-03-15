@@ -10,8 +10,9 @@ router.get('/', verifyToken, verifyAdmin, ctrl.getAll);
 // GET /api/appointments/:id
 router.get('/:id', verifyToken, verifyAdmin, ctrl.getOne);
 
-// POST /api/appointments
-router.post('/', verifyToken, ctrl.create);
+// POST /api/appointments (cho phep khach hoac user)
+router.post('/', ctrl.create);
+
 
 // PUT /api/appointments/:id
 router.put('/:id', verifyToken, verifyAdmin, ctrl.update);
