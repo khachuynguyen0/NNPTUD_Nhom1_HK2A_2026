@@ -65,11 +65,11 @@ const payAppointment = async (req, res) => {
         appointment.totalAmount = finalAmount;
         await appointment.save();
 
-        // 4. Cong diem cho user (ti le: 10000 VND = 1 diem)
+        // 4. Cong diem cho user (ti le: 100000 VND = 1 diem)
         let pointsEarned = 0;
         const userId = appointment.userId;
         if (userId && finalAmount > 0) {
-            pointsEarned = Math.floor(finalAmount / 10000);
+            pointsEarned = Math.floor(finalAmount / 100000);
             const user = await User.findById(userId);
             if (user) {
                 user.points += pointsEarned;
@@ -372,10 +372,10 @@ const createWalkInPayment = async (req, res) => {
         await invoice.save();
         console.log(`[Payment] createWalkInPayment - Da tao hoa don id: ${invoice._id}`);
 
-        // 8. Cong diem cho user (neu co lien ket)
+        // 4. Cong diem cho user (ti le: 100000 VND = 1 diem)
         let pointsEarned = 0;
         if (linkedUserId && finalAmount > 0) {
-            pointsEarned = Math.floor(finalAmount / 10000);
+            pointsEarned = Math.floor(finalAmount / 100000);
             const user = await User.findById(linkedUserId);
             if (user) {
                 user.points += pointsEarned;

@@ -963,7 +963,7 @@
                         ? Object.entries(svcGroups).map(([name, qty]) => qty > 1 ? `${name} ×${qty}` : name).join(', ')
                         : 'Dịch vụ spa';
 
-                    const pointsEarned = Math.floor((a.totalAmount || 0) / 10000);
+                    const pointsEarned = Math.floor((a.totalAmount || 0) / 100000);
                     const customerName = a.userId ? a.userId.username || a.customerName : a.customerName;
                     return `
                         <tr>

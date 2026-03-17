@@ -176,10 +176,17 @@
                 tbody.innerHTML = list.map((appt, i) => {
                     const st = statusLabel(appt.status);
 
-                    // Hien thi nhieu dich vu (mang services da populate)
-                    const svcNames = (appt.services && appt.services.length > 0)
-                        ? appt.services.map(s => s.name || 'Không rõ').join('<br>')
+                    // Nhom dich vu trung nhau thanh "Ten xSoLuong" cho gon
+                    const svcGroups = {};
+                    if (appt.services && appt.services.length > 0) {
+                        appt.services.filter(s => s && s.name).forEach(s => {
+                            svcGroups[s.name] = (svcGroups[s.name] || 0) + 1;
+                        });
+                    }
+                    const svcNames = Object.keys(svcGroups).length > 0
+                        ? Object.entries(svcGroups).map(([name, qty]) => qty > 1 ? `${name} ×${qty}` : name).join('<br>')
                         : (appt.serviceId?.name || 'Dịch vụ không xác định');
+
 
                     // Hien thi voucher va giam gia (neu co)
                     const voucherInfo = appt.voucherCode
