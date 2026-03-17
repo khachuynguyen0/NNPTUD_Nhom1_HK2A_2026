@@ -38,6 +38,9 @@ const userSchema = new mongoose.Schema(
             redeemedAt: { type: Date, default: Date.now },
             isUsed: { type: Boolean, default: false }
         }],
+        // OTP dat lai mat khau (het han sau 10 phut)
+        otpCode:   { type: String, default: null },
+        otpExpiry: { type: Date,   default: null },
     },
     {
         timestamps: true,

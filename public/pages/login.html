@@ -77,9 +77,58 @@
             background: #f8f8f8;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
-        .btn-google img {
-            width: 20px;
-            height: 20px;
+        /* === Forgot Password Modal === */
+        .forgot-link {
+            display: block;
+            text-align: right;
+            font-size: 0.82rem;
+            color: #c2185b;
+            cursor: pointer;
+            margin-top: 6px;
+            text-decoration: underline;
+        }
+        .fp-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        .fp-overlay.open { display: flex; }
+        .fp-modal {
+            background: white;
+            border-radius: 16px;
+            padding: 36px 32px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 8px 30px rgba(194,24,91,0.15);
+            position: relative;
+        }
+        .fp-modal h3 { color: #c2185b; margin-bottom: 16px; text-align: center; font-size: 1.2rem; }
+        .fp-step { display: none; }
+        .fp-step.active { display: block; }
+        .fp-otp-input {
+            font-size: 1.8rem;
+            letter-spacing: 10px;
+            text-align: center;
+            font-weight: bold;
+            color: #c2185b;
+            border: 2px solid #fce4ec;
+            border-radius: 10px;
+            padding: 12px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .fp-otp-input:focus { border-color: #e91e8c; outline: none; }
+        .fp-close {
+            position: absolute;
+            top: 12px; right: 16px;
+            font-size: 1.4rem;
+            cursor: pointer;
+            color: #aaa;
+            background: none;
+            border: none;
         }
     </style>
 </head>
@@ -124,6 +173,7 @@
                 <div class="form-actions" style="margin-top: 24px;">
                     <button type="submit" class="btn" id="btnLogin" style="width: 100%;">Đăng Nhập</button>
                 </div>
+                <span class="forgot-link" onclick="openFpModal()">🔑 Quên mật khẩu?</span>
             </form>
 
             <!-- Duong ke "hoac" -->
@@ -143,6 +193,53 @@
 
             <div class="auth-footer" style="margin-top: 20px;">
                 Chưa có tài khoản? <a href="/pages/register.html">Đăng Ký</a>
+            </div>
+        </div>
+
+        <!-- Modal Quên Mật Khẩu (3 bước) -->
+        <div id="fpOverlay" class="fp-overlay" onclick="closeFpModal(event)">
+            <div class="fp-modal">
+                <button class="fp-close" onclick="closeFpModal()">✕</button>
+
+                <!-- Buoc 1: Nhap email -->
+                <div class="fp-step active" id="fpStep1">
+                    <h3>🔑 Quên Mật Khẩu</h3>
+                    <p style="color:#666;font-size:0.88rem;margin-bottom:16px">Nhập Gmail đã đăng ký, chúng tôi sẽ gửi mã OTP xác nhận.</p>
+                    <div class="form-group">
+                        <label>Gmail đã đăng ký</label>
+                        <input type="email" id="fpEmail" placeholder="example@gmail.com" autocomplete="email" />
+                    </div>
+                    <button class="btn" style="width:100%;margin-top:12px" onclick="fpSendOtp()">📩 Gửi Mã OTP</button>
+                </div>
+
+                <!-- Buoc 2: Nhap OTP -->
+                <div class="fp-step" id="fpStep2">
+                    <h3>📨 Nhập Mã OTP</h3>
+                    <p style="color:#666;font-size:0.88rem;margin-bottom:16px">Kiểm tra hộp thư Gmail của bạn và nhập mã 6 số bên dưới (có hiệu lực 10 phút).</p>
+                    <input type="text" class="fp-otp-input" id="fpOtp" placeholder="000000" maxlength="6" inputmode="numeric" />
+                    <button class="btn" style="width:100%;margin-top:16px" onclick="fpVerifyOtp()">✅ Xác Nhận OTP</button>
+                    <p style="text-align:center;margin-top:12px;font-size:0.82rem">
+                        <span style="color:#aaa">Không nhận được?</span>
+                        <a href="#" onclick="fpGoStep(1)" style="color:#c2185b">Gửi lại</a>
+                    </p>
+                </div>
+
+                <!-- Buoc 3: Nhap mk moi -->
+                <div class="fp-step" id="fpStep3">
+                    <h3>🔒 Đặt Mật Khẩu Mới</h3>
+                    <div class="form-group">
+                        <label>Mật khẩu mới (tối thiểu 6 ký tự)</label>
+                        <input type="password" id="fpNewPw" placeholder="Nhập mật khẩu mới" />
+                    </div>
+                    <div class="form-group">
+                        <label>Xác nhận lại</label>
+                        <input type="password" id="fpConfirmPw" placeholder="Nhập lại mật khẩu" />
+                    </div>
+                    <button class="btn" style="width:100%;margin-top:12px" onclick="fpResetPassword()">💾 Lưu Mật Khẩu Mới</button>
+                </div>
+
+                <!-- Thong bao loi trong modal -->
+                <div id="fpAlert" style="display:none;margin-top:12px;padding:10px 14px;border-radius:8px;font-size:0.85rem"></div>
             </div>
         </div>
 
@@ -171,6 +268,82 @@
             el.className = 'alert show alert-' + type;
             el.textContent = msg;
             setTimeout(() => { el.className = 'alert'; }, 4000);
+        }
+
+        // ========== FORGOT PASSWORD ==========
+        let _fpEmail = ''; // Luu email giua cac buoc
+        let _fpOtp   = ''; // Luu OTP giua buoc 2 va 3
+
+        function openFpModal() {
+            document.getElementById('fpOverlay').classList.add('open');
+            fpGoStep(1);
+        }
+        function closeFpModal(e) {
+            if (e && e.target !== document.getElementById('fpOverlay')) return;
+            document.getElementById('fpOverlay').classList.remove('open');
+        }
+        function fpGoStep(n) {
+            document.querySelectorAll('.fp-step').forEach(s => s.classList.remove('active'));
+            document.getElementById('fpStep' + n).classList.add('active');
+            hideFpAlert();
+        }
+        function showFpAlert(type, msg) {
+            const el = document.getElementById('fpAlert');
+            el.style.display = 'block';
+            el.style.background = type === 'error' ? '#fce4ec' : '#e8f5e9';
+            el.style.color = type === 'error' ? '#c62828' : '#2e7d32';
+            el.textContent = msg;
+        }
+        function hideFpAlert() {
+            document.getElementById('fpAlert').style.display = 'none';
+        }
+
+        // Buoc 1: Gui OTP
+        async function fpSendOtp() {
+            const email = document.getElementById('fpEmail').value.trim();
+            if (!email) { showFpAlert('error', '❌ Vui lòng nhập email'); return; }
+            hideFpAlert();
+            try {
+                const res = await callApi('POST', '/api/auth/forgot-password', { email });
+                _fpEmail = email;
+                showFpAlert('success', '✅ ' + (res.message || 'Đã gửi OTP!'));
+                setTimeout(() => fpGoStep(2), 1200);
+            } catch (err) {
+                showFpAlert('error', '❌ ' + err.message);
+            }
+        }
+
+        // Buoc 2: Xac nhan OTP
+        async function fpVerifyOtp() {
+            const otp = document.getElementById('fpOtp').value.trim();
+            if (otp.length !== 6) { showFpAlert('error', '❌ Mã OTP phải đủ 6 số'); return; }
+            hideFpAlert();
+            try {
+                await callApi('POST', '/api/auth/verify-otp', { email: _fpEmail, otp });
+                _fpOtp = otp;
+                fpGoStep(3);
+            } catch (err) {
+                showFpAlert('error', '❌ ' + err.message);
+            }
+        }
+
+        // Buoc 3: Dat mat khau moi
+        async function fpResetPassword() {
+            const newPassword = document.getElementById('fpNewPw').value;
+            const confirmPw  = document.getElementById('fpConfirmPw').value;
+            if (newPassword.length < 6) { showFpAlert('error', '❌ Mật khẩu tối thiểu 6 ký tự'); return; }
+            if (newPassword !== confirmPw) { showFpAlert('error', '❌ Mật khẩu xác nhận không khớp'); return; }
+            hideFpAlert();
+            try {
+                const res = await callApi('POST', '/api/auth/reset-password', { email: _fpEmail, otp: _fpOtp, newPassword });
+                showFpAlert('success', '✅ ' + (res.message || 'Đổi mật khẩu thành công!'));
+                setTimeout(() => {
+                    document.getElementById('fpOverlay').classList.remove('open');
+                    showAlert('success', '✅ Đổi mật khẩu thành công! Hãy đăng nhập lại.');
+                }, 1500);
+            } catch (err) {
+                showFpAlert('error', '❌ ' + err.message);
+            }
         }
 
         // Ham luu thong tin dang nhap va chuyen trang

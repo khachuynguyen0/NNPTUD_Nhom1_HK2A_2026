@@ -66,4 +66,40 @@ async function sendConfirmEmail({ toEmail, customerName, serviceName, appointmen
     console.log(`[Mailer] Da gui email xac nhan den: ${toEmail}`);
 }
 
-module.exports = { sendConfirmEmail };
+// Ham gui email OTP dat lai mat khau
+async function sendOtpEmail({ toEmail, otpCode, username }) {
+    const mailOptions = {
+        from: `"Loan Spa 🌸" <${process.env.MAIL_USER}>`,
+        to: toEmail,
+        subject: '🔐 Loan Spa - Mã OTP Đặt Lại Mật Khẩu',
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; background: #fff5f7; border-radius: 12px; overflow: hidden; border: 1px solid #fce4ec;">
+                <div style="background: linear-gradient(135deg, #e91e8c, #f48fb1); padding: 28px; text-align: center;">
+                    <h1 style="color: white; margin: 0; font-size: 1.6rem;">🌸 Loan Spa</h1>
+                    <p style="color: #ffe0eb; margin: 6px 0 0; font-size: 0.9rem;">Đặt lại mật khẩu</p>
+                </div>
+                <div style="padding: 28px 32px; text-align: center;">
+                    <h2 style="color: #c2185b; margin-bottom: 8px;">Xin chào, ${username}! 👋</h2>
+                    <p style="color: #555; line-height: 1.6; text-align: left;">
+                        Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.<br>
+                        Sử dụng mã OTP bên dưới để tiếp tục (có hiệu lực <strong>10 phút</strong>):
+                    </p>
+                    <div style="background: white; border: 2px dashed #e91e8c; border-radius: 12px; padding: 24px; margin: 20px 0;">
+                        <div style="font-size: 2.5rem; font-weight: bold; color: #c2185b; letter-spacing: 12px;">${otpCode}</div>
+                    </div>
+                    <p style="color: #888; font-size: 0.83rem;">
+                        Nếu bạn không yêu cầu điều này, hãy bỏ qua email này. Tài khoản của bạn vẫn an toàn.
+                    </p>
+                </div>
+                <div style="background: #c2185b; padding: 14px; text-align: center;">
+                    <p style="color: #ffe0eb; margin: 0; font-size: 0.8rem;">🌸 Loan Spa © 2026</p>
+                </div>
+            </div>
+        `,
+    };
+    await transporter.sendMail(mailOptions);
+    console.log(`[Mailer] Da gui OTP den: ${toEmail}`);
+}
+
+module.exports = { sendConfirmEmail, sendOtpEmail };
+

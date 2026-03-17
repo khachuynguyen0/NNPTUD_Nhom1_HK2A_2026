@@ -151,4 +151,118 @@ const getGoogleClientId = (req, res) => {
     res.json({ clientId }); // Tra ve chuoi rong neu chua cau hinh
 };
 
-module.exports = { register, login, googleLogin, getMe, getGoogleClientId };
+// ============================================================
+// FORGOT PASSWORD: 3 buoc — Gui OTP → Xac nhan OTP → Doi MK
+// ============================================================
+
+const { sendOtpEmail } = require('../config/mailer');
+
+// [POST] /api/auth/forgot-password - Buoc 1: Kiem tra email va gui OTP
+const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ success: false, message: 'Vui long nhap email' });
+
+        const user = await User.findOne({ email: email.trim().toLowerCase() });
+        if (!user) {
+            // Tra loi chung de tranh lo thong tin co email hay khong
+            return res.status(404).json({ success: false, message: 'Khong tim thay tai khoan voi email nay' });
+        }
+        if (user.googleId && !user.password) {
+            return res.status(400).json({ success: false, message: 'Tai khoan nay dang nhap bang Google, khong co mat khau de dat lai' });
+        }
+
+        // Tao OTP 6 so ngau nhien
+        const otp = String(Math.floor(100000 + Math.random() * 900000));
+        // OTP het han sau 10 phut
+        user.otpCode = otp;
+        user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+        await user.save();
+
+        // Gui OTP qua email (background - khong await de tra nhanh)
+        sendOtpEmail({ toEmail: user.email, otpCode: otp, username: user.username })
+            .catch(err => console.error('[Auth] forgotPassword - Loi gui OTP email:', err.message));
+
+        console.log(`[Auth] forgotPassword - Da tao OTP cho: ${user.email}`);
+        res.json({ success: true, message: 'Ma OTP da duoc gui toi email cua ban. Kiem tra hop thu!' });
+    } catch (err) {
+        console.error('[Auth] forgotPassword - Loi:', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// [POST] /api/auth/verify-otp - Buoc 2: Xac nhan ma OTP
+const verifyOtp = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        if (!email || !otp) return res.status(400).json({ success: false, message: 'Thieu email hoac ma OTP' });
+
+        const user = await User.findOne({ email: email.trim().toLowerCase() });
+        if (!user || !user.otpCode) {
+            return res.status(400).json({ success: false, message: 'Ma OTP khong hop le hoac chua gui' });
+        }
+
+        // Kiem tra con han khong
+        if (new Date() > user.otpExpiry) {
+            user.otpCode = null;
+            user.otpExpiry = null;
+            await user.save();
+            return res.status(400).json({ success: false, message: 'Ma OTP da het han. Vui long thu lai' });
+        }
+
+        // So sanh OTP
+        if (user.otpCode !== otp.trim()) {
+            return res.status(400).json({ success: false, message: 'Ma OTP khong chinh xac' });
+        }
+
+        console.log(`[Auth] verifyOtp - OTP hop le cho: ${email}`);
+        // Tra ve token tam thoi (khong xoa OTP, can cho buoc 3)
+        res.json({ success: true, message: 'Xac nhan OTP thanh cong. Hay nhap mat khau moi!' });
+    } catch (err) {
+        console.error('[Auth] verifyOtp - Loi:', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// [POST] /api/auth/reset-password - Buoc 3: Dat mat khau moi
+const resetPassword = async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+        if (!email || !otp || !newPassword) {
+            return res.status(400).json({ success: false, message: 'Thieu thong tin bat buoc' });
+        }
+        if (newPassword.length < 6) {
+            return res.status(400).json({ success: false, message: 'Mat khau moi phai co it nhat 6 ky tu' });
+        }
+
+        const user = await User.findOne({ email: email.trim().toLowerCase() });
+        if (!user || !user.otpCode) {
+            return res.status(400).json({ success: false, message: 'Phien dat lai mat khau khong hop le. Vui long thu lai tu dau' });
+        }
+        if (new Date() > user.otpExpiry) {
+            user.otpCode = null; user.otpExpiry = null;
+            await user.save();
+            return res.status(400).json({ success: false, message: 'Ma OTP da het han. Vui long thu lai' });
+        }
+        if (user.otpCode !== otp.trim()) {
+            return res.status(400).json({ success: false, message: 'Ma OTP khong chinh xac' });
+        }
+
+        // Hash mat khau moi
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+        // Xoa OTP sau khi dung xong
+        user.otpCode = null;
+        user.otpExpiry = null;
+        await user.save();
+
+        console.log(`[Auth] resetPassword - Da doi mat khau cho: ${email}`);
+        res.json({ success: true, message: 'Doi mat khau thanh cong! Hay dang nhap lai.' });
+    } catch (err) {
+        console.error('[Auth] resetPassword - Loi:', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+module.exports = { register, login, googleLogin, getMe, getGoogleClientId, forgotPassword, verifyOtp, resetPassword };
+
