@@ -61,14 +61,20 @@ const create = async (req, res) => {
         }
 
         // Lay thong tin cac dich vu de tinh tong tien
+        // Dung $in se tra ve unique, nen phai map gia sau do tinh theo tung phan tu cua serviceIds (co the trung nhau)
         const serviceList = await Product.find({ _id: { $in: serviceIds } });
         if (serviceList.length === 0) {
             return res.status(404).json({ success: false, message: 'Khong tim thay dich vu nao hop le' });
         }
 
-        // Tinh tong tien tat ca dich vu
-        const totalBeforeDiscount = serviceList.reduce((sum, s) => sum + s.price, 0);
-        console.log(`[Appointment] create - Tong tien truoc giam: ${totalBeforeDiscount}`);
+        // Tao map: id -> price de tinh nhanh
+        const priceMap = {};
+        serviceList.forEach(s => { priceMap[s._id.toString()] = s.price; });
+
+        // Tinh tong dua tren tung phan tu cua serviceIds (ke ca trung nhau = so luong > 1)
+        const totalBeforeDiscount = serviceIds.reduce((sum, id) => sum + (priceMap[id] || 0), 0);
+        console.log(`[Appointment] create - Tong tien truoc giam: ${totalBeforeDiscount} (${serviceIds.length} dich vu, bao gom dup)`);
+
 
         // Xu ly token thu cong neu co (cho phep khach hoac user dang nhap dat lich)
         let userId = null;

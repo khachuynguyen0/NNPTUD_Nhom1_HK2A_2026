@@ -34,6 +34,7 @@
             height: 17px;
             accent-color: #c2185b;
             cursor: pointer;
+            flex-shrink: 0;
         }
         .service-item label {
             flex: 1;
@@ -46,6 +47,37 @@
             color: #c2185b;
             font-weight: bold;
             white-space: nowrap;
+        }
+        /* Nut dieu chinh so luong - an cho den khi check */
+        .qty-wrap {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .qty-wrap.show { display: flex; }
+        .qty-btn {
+            width: 24px;
+            height: 24px;
+            border: none;
+            border-radius: 50%;
+            background: #e91e8c;
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .qty-btn:hover { background: #c2185b; }
+        .qty-num {
+            min-width: 20px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.9rem;
         }
 
         /* ---- Thong tin gia tong ---- */
@@ -234,11 +266,16 @@
                 return;
             }
 
-            // Tinh tong truoc giam
+            // Tinh tong = gia x so luong
             let total = 0;
-            checked.forEach(cb => { total += Number(cb.dataset.price); });
+            let totalItems = 0;
+            checked.forEach(cb => {
+                const qty = getQty(cb.value);
+                total += Number(cb.dataset.price) * qty;
+                totalItems += qty;
+            });
 
-            document.getElementById('svcCount').textContent = checked.length;
+            document.getElementById('svcCount').textContent = totalItems;
             document.getElementById('priceBeforeDiscount').textContent = fmtPrice(total);
 
             // Hien thi giam gia neu co
@@ -256,6 +293,21 @@
             const finalTotal = Math.max(0, total - discount);
             document.getElementById('priceTotal').textContent = fmtPrice(finalTotal);
             summary.style.display = 'block';
+        }
+
+        // Lay so luong hien tai cua 1 dich vu
+        function getQty(serviceId) {
+            const el = document.getElementById('qty_num_' + serviceId);
+            return el ? Math.max(1, parseInt(el.textContent) || 1) : 1;
+        }
+
+        // Thay doi so luong (delta = +1 hoac -1)
+        function changeQty(serviceId, delta) {
+            const el = document.getElementById('qty_num_' + serviceId);
+            if (!el) return;
+            const newQty = Math.max(1, (parseInt(el.textContent) || 1) + delta);
+            el.textContent = newQty;
+            updatePriceSummary();
         }
 
         // ========== LOAD DANH SACH DICH VU ==========
@@ -278,10 +330,16 @@
                                 id="svc_${s._id}"
                                 value="${s._id}"
                                 data-price="${s.price}"
-                                onchange="updatePriceSummary()"
+                                onchange="onSvcChange('${s._id}')"
                                 onclick="event.stopPropagation()" />
                             <label for="svc_${s._id}">${s.name}</label>
                             <span class="service-price">${price}</span>
+                            <!-- Nut dieu chinh so luong, chi hien khi da tick -->
+                            <div class="qty-wrap" id="qty_wrap_${s._id}" onclick="event.stopPropagation()">
+                                <button class="qty-btn" onclick="changeQty('${s._id}', -1)">−</button>
+                                <span class="qty-num" id="qty_num_${s._id}">1</span>
+                                <button class="qty-btn" onclick="changeQty('${s._id}', +1)">+</button>
+                            </div>
                         </div>`;
                 }).join('');
 
@@ -290,17 +348,33 @@
                 const serviceId = urlParams.get('serviceId');
                 if (serviceId) {
                     const cb = document.getElementById('svc_' + serviceId);
-                    if (cb) { cb.checked = true; updatePriceSummary(); }
+                    if (cb) { cb.checked = true; onSvcChange(serviceId); }
                 }
             } catch (err) {
                 console.error('[Booking] loi load dich vu:', err.message);
             }
         }
 
+        // Khi thay doi checkbox: hien/an qty control + cap nhat gia
+        function onSvcChange(id) {
+            const cb = document.getElementById('svc_' + id);
+            const wrap = document.getElementById('qty_wrap_' + id);
+            if (!cb || !wrap) return;
+            if (cb.checked) {
+                wrap.classList.add('show');
+            } else {
+                wrap.classList.remove('show');
+                // Reset so luong ve 1 khi bo chon
+                const numEl = document.getElementById('qty_num_' + id);
+                if (numEl) numEl.textContent = '1';
+            }
+            updatePriceSummary();
+        }
+
         // Toggle checkbox khi click vao row
         function toggleService(id) {
             const cb = document.getElementById('svc_' + id);
-            if (cb) { cb.checked = !cb.checked; updatePriceSummary(); }
+            if (cb) { cb.checked = !cb.checked; onSvcChange(id); }
         }
 
         // ========== APPLY VOUCHER ==========
@@ -368,9 +442,17 @@
             const dateVal = document.getElementById('custDate').value;
             const note = document.getElementById('custNote').value.trim();
 
-            // Lay danh sach dich vu da chon
+            // Lay danh sach dich vu da chon, nhan len theo so luong
+            // VD: chon dich vu A so luong 3 -> gui [A, A, A] de tuong thich voi server
             const checkedBoxes = document.querySelectorAll('.svc-checkbox:checked');
-            const serviceIds = Array.from(checkedBoxes).map(cb => cb.value);
+            const serviceIds = [];
+            checkedBoxes.forEach(cb => {
+                const qty = getQty(cb.value);
+                for (let i = 0; i < qty; i++) {
+                    serviceIds.push(cb.value);
+                }
+            });
+            console.log('[Booking] Dich vu gui len:', serviceIds);
 
             // Kiem tra cac truong bat buoc
             if (!customerName) { showAlert('error', '❌ Vui lòng nhập họ và tên!'); return; }
@@ -400,13 +482,16 @@
             try {
                 await callApi('POST', '/api/appointments', body);
                 showAlert('success', '✅ Đặt lịch thành công! Chúng tôi sẽ xác nhận qua email sớm nhất.');
-                // Reset form
+                // Reset form + qty controls
                 document.getElementById('custName').value = '';
                 document.getElementById('custPhone').value = '';
                 document.getElementById('custEmail').value = '';
                 document.getElementById('custDate').value = '';
                 document.getElementById('custNote').value = '';
-                document.querySelectorAll('.svc-checkbox:checked').forEach(cb => cb.checked = false);
+                document.querySelectorAll('.svc-checkbox:checked').forEach(cb => {
+                    cb.checked = false;
+                    onSvcChange(cb.value);
+                });
                 removeVoucher();
                 updatePriceSummary();
                 // Neu dang nhap thi chuyen sang trang lich cua toi
