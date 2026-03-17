@@ -275,6 +275,133 @@ const getInvoices = async (req, res) => {
     }
 };
 
+// [POST] /api/payments/walkin - Admin tao hoa don truc tiep cho khach vang lai (walk-in)
+const createWalkInPayment = async (req, res) => {
+    try {
+        const { items, discountPercent, voucherCode, userEmail, customerName, phone } = req.body;
+        const Product = require('../models/Product');
+
+        // 1. Kiem tra du lieu dau vao
+        if (!items || !Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ success: false, message: 'Phai chon it nhat 1 dich vu' });
+        }
+
+        // 2. Lay thong tin gia cac dich vu tu DB
+        const serviceIds = items.map(i => i.serviceId);
+        const serviceList = await Product.find({ _id: { $in: serviceIds } });
+
+        if (serviceList.length === 0) {
+            return res.status(404).json({ success: false, message: 'Khong tim thay dich vu nao hop le' });
+        }
+
+        // 3. Tinh tong tien (gia x so luong)
+        let baseTotal = 0;
+        const serviceMap = {}; // serviceId -> price
+        serviceList.forEach(s => { serviceMap[s._id.toString()] = s; });
+
+        // Tao mang services (co the trung ID neu so luong > 1)
+        const servicesArr = [];
+        items.forEach(item => {
+            const svc = serviceMap[item.serviceId];
+            if (svc) {
+                const qty = Math.max(1, parseInt(item.quantity) || 1);
+                baseTotal += svc.price * qty;
+                for (let i = 0; i < qty; i++) {
+                    servicesArr.push(svc._id);
+                }
+            }
+        });
+
+        console.log(`[Payment] createWalkInPayment - Tong goc: ${baseTotal}, So luong item: ${servicesArr.length}`);
+
+        // 4. Ap dung % giam gia (neu co)
+        let discountByPercent = 0;
+        const pct = parseFloat(discountPercent) || 0;
+        if (pct > 0 && pct <= 100) {
+            discountByPercent = Math.round(baseTotal * pct / 100);
+        }
+
+        // 5. Ap dung voucher (neu co email va ma voucher)
+        let appliedVoucherCode = '';
+        let discountByVoucher = 0;
+        let linkedUserId = null;
+
+        if (voucherCode && voucherCode.trim() !== '' && userEmail && userEmail.trim() !== '') {
+            const targetUser = await User.findOne({ email: userEmail.trim().toLowerCase() });
+            if (!targetUser) {
+                return res.status(404).json({ success: false, message: 'Khong tim thay tai khoan voi email: ' + userEmail });
+            }
+            const vIdx = targetUser.vouchers.findIndex(
+                v => v.code === voucherCode.trim().toUpperCase() && !v.isUsed
+            );
+            if (vIdx === -1) {
+                return res.status(400).json({ success: false, message: 'Voucher khong hop le hoac da duoc su dung' });
+            }
+            discountByVoucher = targetUser.vouchers[vIdx].discount;
+            appliedVoucherCode = targetUser.vouchers[vIdx].code;
+            targetUser.vouchers[vIdx].isUsed = true;
+            await targetUser.save();
+            linkedUserId = targetUser._id;
+            console.log(`[Payment] createWalkInPayment - Ap dung voucher: ${appliedVoucherCode}, giam: ${discountByVoucher}`);
+        } else if (userEmail && userEmail.trim() !== '') {
+            // Chi tim user de cong diem, khong dung voucher
+            const targetUser = await User.findOne({ email: userEmail.trim().toLowerCase() });
+            if (targetUser) linkedUserId = targetUser._id;
+        }
+
+        // 6. Tinh thanh tien cuoi
+        const totalDiscount = discountByPercent + discountByVoucher;
+        const finalAmount = Math.max(0, baseTotal - totalDiscount);
+        console.log(`[Payment] createWalkInPayment - Giam %: ${discountByPercent}, Giam voucher: ${discountByVoucher}, Thanh tien: ${finalAmount}`);
+
+        // 7. Luu hoa don (Appointment) voi trang thai done + paid
+        const invoice = new Appointment({
+            customerName: (customerName || 'Khach vang lai').trim(),
+            phone: (phone || '---').trim(),
+            email: userEmail || '',
+            services: servicesArr,
+            appointmentDate: new Date(), // dat lich = thoi diem hien tai
+            userId: linkedUserId || undefined,
+            totalAmount: finalAmount,
+            voucherCode: appliedVoucherCode,
+            discountAmount: totalDiscount,
+            paymentStatus: 'paid',
+            status: 'done',
+            note: pct > 0 ? `Giam gia ${pct}%` : '',
+        });
+        await invoice.save();
+        console.log(`[Payment] createWalkInPayment - Da tao hoa don id: ${invoice._id}`);
+
+        // 8. Cong diem cho user (neu co lien ket)
+        let pointsEarned = 0;
+        if (linkedUserId && finalAmount > 0) {
+            pointsEarned = Math.floor(finalAmount / 10000);
+            const user = await User.findById(linkedUserId);
+            if (user) {
+                user.points += pointsEarned;
+                await user.save();
+                console.log(`[Payment] createWalkInPayment - Cong ${pointsEarned} diem cho: ${user.username}`);
+            }
+        }
+
+        res.status(201).json({
+            success: true,
+            message: 'Thanh toan thanh cong!',
+            data: invoice,
+            summary: {
+                baseTotal,
+                discountByPercent,
+                discountByVoucher,
+                finalAmount,
+                pointsEarned
+            }
+        });
+    } catch (error) {
+        console.error('[Payment] createWalkInPayment - Loi:', error.message);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 module.exports = {
     payAppointment,
     redeemVoucher,
@@ -284,5 +411,7 @@ module.exports = {
     updateVoucher,
     deleteVoucher,
     addPoints,
-    getInvoices
+    getInvoices,
+    createWalkInPayment
 };
+

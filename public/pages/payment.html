@@ -7,195 +7,286 @@
     <title>Loan Spa - Thanh Toán</title>
     <link rel="stylesheet" href="/css/style.css" />
     <style>
-        /* ====== TAB ====== */
-        .tab-bar {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 24px;
-            border-bottom: 2px solid #fce4ec;
-            padding-bottom: 0;
+        /* ====== LAYOUT 2 COT ====== */
+        .pos-layout {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 20px;
+            align-items: start;
         }
-        .tab-btn {
-            padding: 10px 24px;
-            background: transparent;
-            border: none;
-            border-bottom: 3px solid transparent;
-            color: #888;
-            font-size: 1rem;
-            cursor: pointer;
-            font-weight: 600;
-            transition: color 0.2s;
-            margin-bottom: -2px;
-        }
-        .tab-btn.active {
-            color: #c2185b;
-            border-bottom-color: #c2185b;
-        }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
 
-        /* ====== BANG DANH SACH ====== */
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
+        /* ====== LUOI DICH VU (COT TRAI) ====== */
+        .service-panel {
             background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(194,24,91,0.06);
+            border-radius: 14px;
+            padding: 20px;
+            border: 1px solid #fce4ec;
         }
-        .data-table th {
+        .service-panel h3 {
+            color: #c2185b;
+            font-size: 1rem;
+            margin-bottom: 14px;
+        }
+        .svc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        .svc-card {
+            border: 2px solid #fce4ec;
+            border-radius: 10px;
+            padding: 12px;
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background: white;
+            position: relative;
+        }
+        .svc-card:hover {
+            border-color: #e91e8c;
+            box-shadow: 0 2px 8px rgba(233,30,140,0.12);
+        }
+        .svc-card.selected {
+            border-color: #e91e8c;
+            background: #fff5f7;
+        }
+        .svc-card img {
+            width: 100%;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 7px;
+            margin-bottom: 8px;
+        }
+        .svc-card .no-img {
+            width: 100%;
+            height: 80px;
             background: #fce4ec;
-            color: #c2185b;
-            padding: 12px 14px;
-            text-align: left;
-            font-size: 0.88rem;
-        }
-        .data-table td {
-            padding: 12px 14px;
-            border-bottom: 1px solid #fff0f5;
-            font-size: 0.88rem;
-            vertical-align: middle;
-        }
-        .data-table tr:last-child td { border-bottom: none; }
-        .data-table tr:hover td { background: #fff5f7; }
-
-        /* ====== SECTION HEADER ====== */
-        .section-header {
+            border-radius: 7px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 18px;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin-bottom: 8px;
         }
-        .section-header h3 {
-            color: #c2185b;
-            font-size: 1.1rem;
+        .svc-card .svc-name {
+            font-size: 0.88rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 4px;
         }
-
-        /* ====== BADGE ====== */
-        .badge {
-            display: inline-block;
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 0.78rem;
+        .svc-card .svc-price {
+            font-size: 0.85rem;
+            color: #e91e8c;
             font-weight: bold;
         }
-        .badge-confirmed { background: #e3f2fd; color: #1565c0; }
-        .badge-pending   { background: #fff3cd; color: #856404; }
-
-        /* ====== MODAL THANH TOAN ====== */
-        #payModalOverlay {
+        /* Nut dieu chinh so luong tren card */
+        .qty-control {
             display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.45);
-            z-index: 200;
-            justify-content: center;
             align-items: center;
+            gap: 8px;
+            margin-top: 8px;
         }
-        #payModalOverlay.open { display: flex; }
+        .svc-card.selected .qty-control {
+            display: flex;
+        }
+        .qty-btn {
+            width: 26px;
+            height: 26px;
+            border: none;
+            border-radius: 50%;
+            background: #e91e8c;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            line-height: 1;
+        }
+        .qty-btn:hover { background: #c2185b; }
+        .qty-num {
+            min-width: 22px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
 
-        #payModal {
+        /* ====== HOA DON (COT PHAI) ====== */
+        .invoice-panel {
             background: white;
-            border-radius: 16px;
-            padding: 30px;
-            width: 100%;
-            max-width: 500px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.18);
-        }
-        #payModal h3 {
-            color: #c2185b;
-            font-size: 1.15rem;
-            margin-bottom: 20px;
-        }
-
-        /* ====== TONG KET HOA DON ====== */
-        .invoice-summary {
-            background: #fff5f7;
+            border-radius: 14px;
             border: 1px solid #fce4ec;
-            border-radius: 10px;
-            padding: 16px;
-            margin-bottom: 16px;
+            padding: 20px;
+            position: sticky;
+            top: 16px;
         }
-        .invoice-summary .row {
+        .invoice-panel h3 {
+            color: #c2185b;
+            font-size: 1rem;
+            margin-bottom: 14px;
+            border-bottom: 1px solid #fce4ec;
+            padding-bottom: 10px;
+        }
+        /* Danh sach item da chon */
+        .cart-items {
+            min-height: 60px;
+            margin-bottom: 14px;
+        }
+        .cart-item {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 0.9rem;
+            font-size: 0.83rem;
+            padding: 5px 0;
+            border-bottom: 1px dashed #fce4ec;
         }
-        .invoice-summary .row:last-child {
-            margin-bottom: 0;
-            padding-top: 10px;
+        .cart-item:last-child { border-bottom: none; }
+        .cart-item .name { color: #333; flex: 1; }
+        .cart-item .subtotal { color: #c2185b; font-weight: bold; white-space: nowrap; margin-left: 8px; }
+        .cart-empty {
+            text-align: center;
+            color: #ccc;
+            font-size: 0.85rem;
+            padding: 16px 0;
+        }
+
+        /* Voucher box */
+        .voucher-box {
+            background: #f3e5f5;
+            border: 1px solid #ce93d8;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        .voucher-box label {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #6a1b9a;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .voucher-row {
+            display: flex;
+            gap: 6px;
+        }
+        .voucher-row input {
+            flex: 1;
+            padding: 7px 10px;
+            border: 1px solid #ce93d8;
+            border-radius: 7px;
+            font-size: 0.83rem;
+            outline: none;
+        }
+        #voucherSelect {
+            width: 100%;
+            margin-top: 8px;
+            padding: 7px 10px;
+            border: 1px solid #ce93d8;
+            border-radius: 7px;
+            font-size: 0.83rem;
+            display: none;
+        }
+        #voucherMsg { font-size: 0.78rem; margin-top: 5px; color: #6a1b9a; }
+
+        /* % giam gia */
+        .discount-box {
+            margin-bottom: 12px;
+        }
+        .discount-box label {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #555;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .discount-row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .discount-row input {
+            width: 80px;
+            padding: 7px 10px;
+            border: 1px solid #f8bbd0;
+            border-radius: 7px;
+            font-size: 0.88rem;
+            outline: none;
+        }
+        .discount-row span { font-size: 0.88rem; color: #888; }
+
+        /* Thong tin khach */
+        .customer-box {
+            margin-bottom: 12px;
+        }
+        .customer-box label {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #555;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .customer-row {
+            display: flex;
+            gap: 6px;
+        }
+        .customer-row input {
+            flex: 1;
+            padding: 7px 10px;
+            border: 1px solid #f8bbd0;
+            border-radius: 7px;
+            font-size: 0.83rem;
+            outline: none;
+        }
+
+        /* Tong ket */
+        .bill-summary {
+            background: #fff5f7;
+            border: 1px solid #fce4ec;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 14px;
+            font-size: 0.85rem;
+        }
+        .bill-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            color: #555;
+        }
+        .bill-row.total {
+            margin-top: 8px;
+            padding-top: 8px;
             border-top: 1px dashed #f8bbd0;
             font-size: 1rem;
             font-weight: bold;
             color: #c2185b;
         }
-        .invoice-summary .row label {
-            color: #666;
-            font-size: inherit;
-            font-weight: inherit;
-        }
+        .bill-row.discount { color: #e91e8c; }
 
-        /* ====== VOUCHER BOX ====== */
-        .voucher-box {
-            background: #f3e5f5;
-            border: 1px solid #ce93d8;
-            border-radius: 10px;
-            padding: 14px 16px;
-            margin-bottom: 16px;
-        }
-        .voucher-box h4 {
-            color: #6a1b9a;
-            font-size: 0.92rem;
-            margin-bottom: 10px;
-        }
-        .voucher-search-row {
-            display: flex;
-            gap: 8px;
-            align-items: flex-end;
-        }
-        .voucher-search-row input {
-            flex: 1;
-            padding: 9px 12px;
-            border: 1px solid #ce93d8;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            outline: none;
-        }
-        .voucher-search-row input:focus { border-color: #8e24aa; }
-        #voucherSelect {
+        /* Nut thanh toan */
+        #btnPay {
             width: 100%;
-            margin-top: 10px;
-            padding: 9px 12px;
-            border: 1px solid #ce93d8;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            display: none;
+            padding: 14px;
+            font-size: 1rem;
+            background: linear-gradient(135deg, #388e3c, #43a047);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: opacity 0.2s, transform 0.15s;
         }
-        #voucherMsg {
-            font-size: 0.82rem;
-            margin-top: 6px;
-            color: #6a1b9a;
-        }
+        #btnPay:hover { opacity: 0.92; transform: translateY(-1px); }
+        #btnPay:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-        /* ====== FILTER BAR ====== */
-        .filter-bar {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
+        /* Responsive */
+        @media (max-width: 768px) {
+            .pos-layout {
+                grid-template-columns: 1fr;
+            }
+            .invoice-panel {
+                position: static;
+            }
         }
-        .filter-bar input {
-            padding: 8px 12px;
-            border: 1px solid #f8bbd0;
-            border-radius: 8px;
-            font-size: 0.88rem;
-            outline: none;
-            flex: 1;
-            min-width: 160px;
-        }
-        .filter-bar input:focus { border-color: #e91e8c; }
     </style>
 </head>
 
@@ -205,7 +296,7 @@
     <header class="header">
         <div class="logo"><img src="/images/logo_loan_Spa.png" alt="Logo"></div>
         <h1>Loan Spa</h1>
-        <span class="tagline">Trang Thanh Toán</span>
+        <span class="tagline">Thanh Toán Tại Quầy</span>
     </header>
 
     <!-- Nav -->
@@ -214,46 +305,84 @@
         <a href="/pages/services.html" class="nav-link">💆 Dịch Vụ</a>
         <a href="/pages/booking.html" class="nav-link">📅 Đặt Lịch</a>
         <a href="/pages/admin.html" class="nav-link">⚙️ Quản Trị</a>
-        <a href="/pages/payment.html" class="nav-link active">💳 Thanh Toán</a>
+        <a href="/pages/payment.html" class="nav-link active" style="background:#388e3c;color:white">💳 Thanh Toán</a>
         <div id="authNav"></div>
     </nav>
 
     <!-- Main -->
-    <main class="main">
+    <main class="main" style="max-width:1100px">
 
         <div id="alert" class="alert"></div>
 
         <div class="page-header">
-            <h2>💳 Trang Thanh Toán Dịch Vụ</h2>
+            <h2>💳 Thanh Toán Tại Quầy</h2>
+            <span style="font-size:0.85rem;color:#888">Khách đến trực tiếp — chọn dịch vụ và thanh toán ngay</span>
         </div>
 
-        <!-- FILTER -->
-        <div class="filter-bar">
-            <input type="text" id="searchInput" placeholder="🔍 Tìm theo tên khách hoặc SĐT..." oninput="filterTable()" />
-            <button class="btn btn-sm" onclick="loadPending()">🔄 Làm mới</button>
-        </div>
+        <div class="pos-layout">
 
-        <!-- BANG LICH HEN CHO THANH TOAN -->
-        <div class="section-header">
-            <h3>📋 Lịch Hẹn Chờ Thanh Toán</h3>
-            <span id="pendingCount" style="font-size:0.85rem;color:#888"></span>
-        </div>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Khách Hàng</th>
-                    <th>SĐT</th>
-                    <th>Dịch Vụ</th>
-                    <th>Ngày Hẹn</th>
-                    <th>Tổng Tiền</th>
-                    <th style="text-align:center">Thao Tác</th>
-                </tr>
-            </thead>
-            <tbody id="pendingTableBody">
-                <tr><td colspan="6" style="text-align:center;color:#aaa;padding:30px">Đang tải...</td></tr>
-            </tbody>
-        </table>
+            <!-- COT TRAI: LUOI DICH VU -->
+            <div class="service-panel">
+                <h3>🛎️ Chọn Dịch Vụ</h3>
+                <div id="svcGrid" class="svc-grid">
+                    <p style="color:#aaa;font-size:0.9rem">Đang tải dịch vụ...</p>
+                </div>
+            </div>
 
+            <!-- COT PHAI: HOA DON -->
+            <div class="invoice-panel">
+                <h3>🧾 Hóa Đơn</h3>
+
+                <!-- Danh sach chon -->
+                <div id="cartItems" class="cart-items">
+                    <p class="cart-empty">Chưa chọn dịch vụ nào</p>
+                </div>
+
+                <!-- Voucher theo gmail -->
+                <div class="voucher-box">
+                    <label>🎟️ Voucher Theo Gmail Khách (Tùy Chọn)</label>
+                    <div class="voucher-row">
+                        <input type="email" id="customerEmail" placeholder="Gmail của khách..." />
+                        <button class="btn btn-sm" onclick="findVouchers()">🔍</button>
+                    </div>
+                    <select id="voucherSelect" onchange="onVoucherChange()">
+                        <option value="">-- Không dùng voucher --</option>
+                    </select>
+                    <div id="voucherMsg"></div>
+                </div>
+
+                <!-- % giam gia thu cong -->
+                <div class="discount-box">
+                    <label>🏷️ Giảm Giá Thủ Công (%)</label>
+                    <div class="discount-row">
+                        <input type="number" id="discountPct" min="0" max="100" value="0"
+                            placeholder="0" oninput="updateBill()" />
+                        <span>% (nhập 0 nếu không giảm)</span>
+                    </div>
+                </div>
+
+                <!-- Thong tin khach -->
+                <div class="customer-box">
+                    <label>👤 Thông Tin Khách (Tùy Chọn)</label>
+                    <div class="customer-row">
+                        <input type="text" id="customerName" placeholder="Tên khách..." />
+                        <input type="tel" id="customerPhone" placeholder="SĐT..." />
+                    </div>
+                </div>
+
+                <!-- Tong ket -->
+                <div class="bill-summary">
+                    <div class="bill-row"><span>Tổng dịch vụ</span><span id="billBase">0 ₫</span></div>
+                    <div class="bill-row discount"><span id="billPctLabel">Giảm 0%</span><span id="billPctAmt">- 0 ₫</span></div>
+                    <div class="bill-row discount"><span>Giảm voucher</span><span id="billVoucherAmt">- 0 ₫</span></div>
+                    <div class="bill-row total"><span>💰 Thành Tiền</span><span id="billTotal">0 ₫</span></div>
+                </div>
+
+                <!-- Nut thanh toan -->
+                <button id="btnPay" onclick="submitWalkIn()">💰 Thanh Toán</button>
+            </div>
+
+        </div>
     </main>
 
     <!-- Footer -->
@@ -261,60 +390,17 @@
         <p>🌸 Loan Spa &copy; 2026</p>
     </footer>
 
-    <!-- ========== MODAL THANH TOAN ========== -->
-    <div id="payModalOverlay">
-        <div id="payModal">
-            <h3>💳 Xác Nhận Thanh Toán</h3>
-
-            <!-- Thong tin lich hen -->
-            <div class="invoice-summary" id="apptSummary">
-                <div class="row"><label>Khách hàng</label><span id="sumCustomer">—</span></div>
-                <div class="row"><label>Dịch vụ</label><span id="sumServices">—</span></div>
-                <div class="row"><label>Tổng tiền dịch vụ</label><span id="sumBase">—</span></div>
-            </div>
-
-            <!-- Voucher theo gmail -->
-            <div class="voucher-box">
-                <h4>🎟️ Voucher Theo Tài Khoản Khách (Tùy Chọn)</h4>
-                <div class="voucher-search-row">
-                    <input type="email" id="customerEmail" placeholder="Gmail của khách hàng..." />
-                    <button class="btn btn-sm" onclick="findVouchers()">🔍 Tìm</button>
-                </div>
-                <select id="voucherSelect" onchange="applyVoucher()">
-                    <option value="">-- Không dùng voucher --</option>
-                </select>
-                <div id="voucherMsg"></div>
-            </div>
-
-            <!-- Tong ket -->
-            <div class="invoice-summary">
-                <div class="row"><label>Tổng tiền dịch vụ</label><span id="finalBase">0 ₫</span></div>
-                <div class="row"><label>Giảm giá (Voucher)</label><span id="finalDiscount" style="color:#e91e8c">- 0 ₫</span></div>
-                <div class="row"><label>💰 Thành Tiền</label><span id="finalTotal">0 ₫</span></div>
-            </div>
-
-            <!-- Nut hanh dong -->
-            <div class="form-actions">
-                <button class="btn btn-outline" onclick="closePayModal()">Hủy</button>
-                <button class="btn" id="btnConfirmPay" onclick="confirmPay()" style="background:#388e3c">
-                    ✅ Xác Nhận Thanh Toán
-                </button>
-            </div>
-        </div>
-    </div>
-
     <script src="/js/api.js"></script>
     <script>
-        // Bao ve trang: chi admin moi duoc vao
+        // Chi admin moi duoc vao trang nay
         requireAdmin();
         renderAuthNav();
 
         // ========== BIEN TOAN CUC ==========
-        let allPending = [];        // tat ca lich hen cho thanh toan
-        let currentApptId = null;   // id lich hen dang thanh toan
-        let currentBaseAmount = 0;  // tong tien goc cua lich hen dang chon
-        let selectedVoucherCode = '';   // ma voucher duoc chon
-        let selectedDiscount = 0;       // so tien giam gia
+        // cart: { [serviceId]: { name, price, qty } }
+        const cart = {};
+        let selectedVoucherCode = '';
+        let selectedVoucherDiscount = 0;
 
         // ========== ALERT ==========
         function showAlert(type, msg) {
@@ -322,246 +408,264 @@
             el.className = 'alert show alert-' + type;
             el.textContent = msg;
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            setTimeout(() => { el.className = 'alert'; }, 3500);
+            setTimeout(() => { el.className = 'alert'; }, 4000);
         }
 
-        // ========== FORMAT ==========
-        function formatPrice(p) {
-            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p || 0);
-        }
-        function formatDateTime(d) {
-            return new Date(d).toLocaleString('vi-VN', {
-                weekday: 'short', year: 'numeric', month: '2-digit',
-                day: '2-digit', hour: '2-digit', minute: '2-digit'
-            });
-        }
-        function escHtml(str) {
-            return (str || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        // ========== FORMAT TIEN ==========
+        function fmt(n) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0);
         }
 
-        // ========== TAI DANH SACH CHO THANH TOAN ==========
-        async function loadPending() {
+        // ========== TAI DANH SACH DICH VU ==========
+        async function loadServices() {
             try {
-                const res = await callApi('GET', '/api/appointments');
-                // Chi lay lich da xac nhan (confirmed) va chua thanh toan
-                allPending = (res.data || []).filter(
-                    a => a.status === 'confirmed' && a.paymentStatus === 'pending'
-                );
-                document.getElementById('pendingCount').textContent =
-                    `${allPending.length} lịch hẹn chờ thanh toán`;
-                console.log(`[Payment] loadPending - ${allPending.length} lich cho thanh toan`);
-                renderTable(allPending);
+                const res = await callApi('GET', '/api/products');
+                const list = res.data || [];
+                const grid = document.getElementById('svcGrid');
+                if (list.length === 0) {
+                    grid.innerHTML = '<p style="color:#aaa">Chưa có dịch vụ nào</p>';
+                    return;
+                }
+                grid.innerHTML = list.map(s => `
+                    <div class="svc-card" id="card-${s._id}" onclick="toggleService('${s._id}', '${escName(s.name)}', ${s.price})">
+                        ${s.image
+                            ? `<img src="${s.image}" alt="${escName(s.name)}" />`
+                            : `<div class="no-img">💆</div>`
+                        }
+                        <div class="svc-name">${s.name}</div>
+                        <div class="svc-price">${fmt(s.price)}</div>
+                        <div class="qty-control" onclick="event.stopPropagation()">
+                            <button class="qty-btn" onclick="changeQty('${s._id}', -1)">−</button>
+                            <span class="qty-num" id="qty-${s._id}">1</span>
+                            <button class="qty-btn" onclick="changeQty('${s._id}', +1)">+</button>
+                        </div>
+                    </div>
+                `).join('');
+                console.log(`[Payment] loadServices - Hien thi ${list.length} dich vu`);
             } catch (err) {
-                console.error('[Payment] loadPending - loi:', err.message);
-                showAlert('error', '❌ Lỗi tải dữ liệu: ' + err.message);
+                console.error('[Payment] loadServices - loi:', err.message);
+                showAlert('error', '❌ Lỗi tải dịch vụ: ' + err.message);
             }
         }
 
-        // Ve bang tu du lieu
-        function renderTable(list) {
-            const tbody = document.getElementById('pendingTableBody');
-            if (list.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:30px">Không có lịch hẹn nào chờ thanh toán</td></tr>';
-                return;
+        function escName(str) {
+            return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
+
+        // ========== TOGGLE CHON / BO CHON DICH VU ==========
+        function toggleService(id, name, price) {
+            if (cart[id]) {
+                // Bo chon
+                delete cart[id];
+                document.getElementById('card-' + id).classList.remove('selected');
+            } else {
+                // Them vao gio
+                cart[id] = { name, price, qty: 1 };
+                document.getElementById('card-' + id).classList.add('selected');
+                document.getElementById('qty-' + id).textContent = 1;
             }
-            tbody.innerHTML = list.map(a => {
-                // Ten cac dich vu
-                const serviceNames = Array.isArray(a.services)
-                    ? a.services.map(s => s.name || s).join(', ')
-                    : 'Dịch vụ spa';
-                // Tinh tong tien goc tu danh sach dich vu
-                const baseAmount = Array.isArray(a.services)
-                    ? a.services.reduce((sum, s) => sum + (s.price || 0), 0)
-                    : a.totalAmount;
-                return `
-                    <tr>
-                        <td><b>${escHtml(a.customerName)}</b></td>
-                        <td>${escHtml(a.phone)}</td>
-                        <td style="max-width:200px">${escHtml(serviceNames)}</td>
-                        <td>${formatDateTime(a.appointmentDate)}</td>
-                        <td><b style="color:#c2185b">${formatPrice(baseAmount)}</b></td>
-                        <td style="text-align:center">
-                            <button class="btn btn-sm" style="background:#388e3c;color:white;border:none"
-                                onclick="openPayModal('${a._id}', ${JSON.stringify(escHtml(a.customerName))}, ${JSON.stringify(serviceNames)}, ${baseAmount}, ${JSON.stringify(a.email || '')})">
-                                💳 Thanh Toán
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+            renderCart();
         }
 
-        // Loc bang theo tu khoa tim kiem
-        function filterTable() {
-            const kw = document.getElementById('searchInput').value.trim().toLowerCase();
-            if (!kw) {
-                renderTable(allPending);
-                return;
+        // ========== THAY DOI SO LUONG ==========
+        function changeQty(id, delta) {
+            if (!cart[id]) return;
+            cart[id].qty = Math.max(1, cart[id].qty + delta);
+            document.getElementById('qty-' + id).textContent = cart[id].qty;
+            renderCart();
+        }
+
+        // ========== RENDER GIO HANG ==========
+        function renderCart() {
+            const container = document.getElementById('cartItems');
+            const ids = Object.keys(cart);
+            if (ids.length === 0) {
+                container.innerHTML = '<p class="cart-empty">Chưa chọn dịch vụ nào</p>';
+            } else {
+                container.innerHTML = ids.map(id => {
+                    const item = cart[id];
+                    return `
+                        <div class="cart-item">
+                            <span class="name">${item.name} × ${item.qty}</span>
+                            <span class="subtotal">${fmt(item.price * item.qty)}</span>
+                        </div>
+                    `;
+                }).join('');
             }
-            const filtered = allPending.filter(a =>
-                (a.customerName || '').toLowerCase().includes(kw) ||
-                (a.phone || '').includes(kw)
-            );
-            renderTable(filtered);
+            updateBill();
         }
 
-        // ========== MODAL THANH TOAN ==========
-        function openPayModal(apptId, customerName, serviceNames, baseAmount, email) {
-            currentApptId = apptId;
-            currentBaseAmount = baseAmount;
-            selectedVoucherCode = '';
-            selectedDiscount = 0;
+        // ========== CAP NHAT HOA DON ==========
+        function updateBill() {
+            // Tinh tong goc
+            const baseTotal = Object.values(cart).reduce((sum, i) => sum + i.price * i.qty, 0);
 
-            // Dien thong tin lich hen
-            document.getElementById('sumCustomer').textContent = customerName;
-            document.getElementById('sumServices').textContent = serviceNames;
-            document.getElementById('sumBase').textContent = formatPrice(baseAmount);
+            // Tinh giam theo %
+            const pct = Math.min(100, Math.max(0, parseFloat(document.getElementById('discountPct').value) || 0));
+            const discountPct = Math.round(baseTotal * pct / 100);
 
-            // Reset voucher
-            document.getElementById('customerEmail').value = email || '';
-            document.getElementById('voucherSelect').style.display = 'none';
-            document.getElementById('voucherSelect').innerHTML = '<option value="">-- Không dùng voucher --</option>';
-            document.getElementById('voucherMsg').textContent = '';
+            // Tong thanh tien
+            const finalTotal = Math.max(0, baseTotal - discountPct - selectedVoucherDiscount);
 
-            // Cap nhat tong ket
-            updateTotal();
-
-            document.getElementById('payModalOverlay').classList.add('open');
-            console.log(`[Payment] openPayModal - appt: ${apptId}, base: ${baseAmount}`);
+            // Hien thi
+            document.getElementById('billBase').textContent = fmt(baseTotal);
+            document.getElementById('billPctLabel').textContent = `Giảm ${pct}%`;
+            document.getElementById('billPctAmt').textContent = '- ' + fmt(discountPct);
+            document.getElementById('billVoucherAmt').textContent = '- ' + fmt(selectedVoucherDiscount);
+            document.getElementById('billTotal').textContent = fmt(finalTotal);
         }
 
-        function closePayModal() {
-            document.getElementById('payModalOverlay').classList.remove('open');
-            currentApptId = null;
-        }
-
-        // Tinh lai tong tien khi thay doi
-        function updateTotal() {
-            const finalAmt = Math.max(0, currentBaseAmount - selectedDiscount);
-            document.getElementById('finalBase').textContent = formatPrice(currentBaseAmount);
-            document.getElementById('finalDiscount').textContent = '- ' + formatPrice(selectedDiscount);
-            document.getElementById('finalTotal').textContent = formatPrice(finalAmt);
-        }
-
-        // Tim voucher theo email khach
+        // ========== TIM VOUCHER THEO GMAIL ==========
         async function findVouchers() {
             const email = document.getElementById('customerEmail').value.trim();
             const msgEl = document.getElementById('voucherMsg');
             const sel = document.getElementById('voucherSelect');
 
             if (!email) {
-                msgEl.textContent = '⚠️ Vui lòng nhập email khách hàng';
+                msgEl.textContent = '⚠️ Nhập gmail khách trước';
                 msgEl.style.color = '#e65100';
                 return;
             }
-
-            msgEl.textContent = 'Đang tìm kiếm...';
+            msgEl.textContent = 'Đang tìm...';
             msgEl.style.color = '#6a1b9a';
 
             try {
                 const res = await callApi('GET', `/api/users/by-email/${encodeURIComponent(email)}`);
-                const userData = res.data;
-                const vouchers = userData.vouchers || [];
+                const vouchers = res.data.vouchers || [];
+                console.log(`[Payment] findVouchers - ${res.data.username}: ${vouchers.length} voucher`);
 
-                console.log(`[Payment] findVouchers - ${userData.username}: ${vouchers.length} voucher kha dung`);
+                // Reset voucher hien tai
+                selectedVoucherCode = '';
+                selectedVoucherDiscount = 0;
 
                 if (vouchers.length === 0) {
-                    msgEl.textContent = `✅ Tìm thấy tài khoản "${userData.username}" nhưng không có voucher khả dụng.`;
+                    msgEl.textContent = `✅ "${res.data.username}" không có voucher khả dụng`;
                     msgEl.style.color = '#555';
                     sel.style.display = 'none';
+                    updateBill();
                     return;
                 }
 
-                // Hien dropdown chon voucher
+                // Hien dropdown
                 sel.innerHTML = '<option value="">-- Không dùng voucher --</option>';
                 vouchers.forEach(v => {
                     const opt = document.createElement('option');
                     opt.value = v.code;
                     opt.dataset.discount = v.discount;
-                    opt.textContent = `${v.code} — Giảm ${formatPrice(v.discount)}`;
+                    opt.textContent = `${v.code} — Giảm ${fmt(v.discount)}`;
                     sel.appendChild(opt);
                 });
                 sel.style.display = 'block';
-
-                msgEl.textContent = `✅ Tìm thấy ${vouchers.length} voucher của "${userData.username}"`;
+                msgEl.textContent = `✅ "${res.data.username}" có ${vouchers.length} voucher`;
                 msgEl.style.color = '#2e7d32';
-
-                // Reset lai voucher da chon
-                selectedVoucherCode = '';
-                selectedDiscount = 0;
-                updateTotal();
+                updateBill();
             } catch (err) {
                 console.error('[Payment] findVouchers - loi:', err.message);
                 msgEl.textContent = '❌ ' + err.message;
                 msgEl.style.color = '#c62828';
                 sel.style.display = 'none';
+                selectedVoucherCode = '';
+                selectedVoucherDiscount = 0;
+                updateBill();
             }
         }
 
-        // Ap dung voucher duoc chon tu dropdown
-        function applyVoucher() {
+        function onVoucherChange() {
             const sel = document.getElementById('voucherSelect');
             const chosen = sel.options[sel.selectedIndex];
             if (!chosen || !chosen.value) {
                 selectedVoucherCode = '';
-                selectedDiscount = 0;
+                selectedVoucherDiscount = 0;
             } else {
                 selectedVoucherCode = chosen.value;
-                selectedDiscount = Number(chosen.dataset.discount) || 0;
+                selectedVoucherDiscount = Number(chosen.dataset.discount) || 0;
             }
-            updateTotal();
-            console.log(`[Payment] applyVoucher - ${selectedVoucherCode}, giam: ${selectedDiscount}`);
+            updateBill();
+            console.log(`[Payment] onVoucherChange - ${selectedVoucherCode}, giam: ${selectedVoucherDiscount}`);
         }
 
-        // Xac nhan thanh toan
-        async function confirmPay() {
-            if (!currentApptId) return;
-            const btn = document.getElementById('btnConfirmPay');
-            btn.disabled = true;
-            btn.textContent = 'Đang xử lý...';
-
-            const userEmail = document.getElementById('customerEmail').value.trim();
-
-            try {
-                const body = {};
-                if (selectedVoucherCode) {
-                    body.voucherCode = selectedVoucherCode;
-                    body.userEmail = userEmail;
-                }
-
-                const res = await callApi('POST', `/api/payments/pay/${currentApptId}`, body);
-                let msg = '✅ Thanh toán thành công!';
-                if (res.pointsEarned > 0) {
-                    msg += ` Đã cộng ${res.pointsEarned} điểm tích lũy cho khách hàng.`;
-                }
-                if (selectedVoucherCode) {
-                    msg += ` Đã áp dụng voucher ${selectedVoucherCode}.`;
-                }
-                showAlert('success', msg);
-                console.log(`[Payment] confirmPay - appt: ${currentApptId}, diem: ${res.pointsEarned}`);
-                closePayModal();
-                loadPending(); // Tai lai danh sach
-            } catch (err) {
-                console.error('[Payment] confirmPay - loi:', err.message);
-                showAlert('error', '❌ Lỗi: ' + err.message);
-            } finally {
-                btn.disabled = false;
-                btn.textContent = '✅ Xác Nhận Thanh Toán';
-            }
-        }
-
-        // Dong modal khi click ben ngoai
-        document.getElementById('payModalOverlay').addEventListener('click', function(e) {
-            if (e.target === this) closePayModal();
-        });
-
-        // Cho phep nhan Enter trong o email de tim voucher
-        document.getElementById('customerEmail').addEventListener('keydown', function(e) {
+        // Cho phep nhan Enter trong o email
+        document.getElementById('customerEmail').addEventListener('keydown', e => {
             if (e.key === 'Enter') findVouchers();
         });
 
+        // ========== THANH TOAN ==========
+        async function submitWalkIn() {
+            const ids = Object.keys(cart);
+            if (ids.length === 0) {
+                showAlert('error', '❌ Vui lòng chọn ít nhất 1 dịch vụ');
+                return;
+            }
+
+            const btn = document.getElementById('btnPay');
+            btn.disabled = true;
+            btn.textContent = 'Đang xử lý...';
+
+            const items = ids.map(id => ({ serviceId: id, quantity: cart[id].qty }));
+            const discountPercent = parseFloat(document.getElementById('discountPct').value) || 0;
+            const userEmail = document.getElementById('customerEmail').value.trim();
+            const customerName = document.getElementById('customerName').value.trim();
+            const phone = document.getElementById('customerPhone').value.trim();
+
+            try {
+                const body = {
+                    items,
+                    discountPercent,
+                    customerName: customerName || 'Khách vãng lai',
+                    phone: phone || '---',
+                };
+                if (userEmail) body.userEmail = userEmail;
+                if (selectedVoucherCode) body.voucherCode = selectedVoucherCode;
+
+                const res = await callApi('POST', '/api/payments/walkin', body);
+                const s = res.summary;
+
+                let msg = `✅ Thanh toán thành công! Thành tiền: ${fmt(s.finalAmount)}`;
+                if (s.pointsEarned > 0) msg += ` — Cộng ${s.pointsEarned} điểm cho khách.`;
+                if (selectedVoucherCode) msg += ` Voucher ${selectedVoucherCode} đã dùng.`;
+
+                showAlert('success', msg);
+                console.log(`[Payment] submitWalkIn - Hoa don: ${res.data._id}, thanh tien: ${s.finalAmount}`);
+
+                // Reset form
+                resetForm();
+            } catch (err) {
+                console.error('[Payment] submitWalkIn - loi:', err.message);
+                showAlert('error', '❌ Lỗi: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '💰 Thanh Toán';
+            }
+        }
+
+        // ========== RESET FORM ==========
+        function resetForm() {
+            // Xoa gio hang
+            Object.keys(cart).forEach(id => {
+                delete cart[id];
+                const card = document.getElementById('card-' + id);
+                if (card) {
+                    card.classList.remove('selected');
+                    const qtyEl = document.getElementById('qty-' + id);
+                    if (qtyEl) qtyEl.textContent = '1';
+                }
+            });
+            // Xoa cac truong nhap
+            document.getElementById('customerEmail').value = '';
+            document.getElementById('discountPct').value = '0';
+            document.getElementById('customerName').value = '';
+            document.getElementById('customerPhone').value = '';
+            document.getElementById('voucherSelect').style.display = 'none';
+            document.getElementById('voucherSelect').innerHTML = '<option value="">-- Không dùng voucher --</option>';
+            document.getElementById('voucherMsg').textContent = '';
+            selectedVoucherCode = '';
+            selectedVoucherDiscount = 0;
+            renderCart();
+        }
+
         // ========== KHOI DONG ==========
-        loadPending();
+        loadServices();
+        updateBill();
     </script>
 
 </body>

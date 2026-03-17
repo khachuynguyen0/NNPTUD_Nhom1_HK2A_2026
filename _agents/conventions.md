@@ -79,6 +79,7 @@ description: Quy tac va luu y chung cho project Quan Ly Tiem Spa - Loan Spa
 | POST | `/api/payments/add-points` | Admin cong diem thu cong cho user |
 | GET | `/api/payments/invoices` | Admin lay danh sach hoa don da thanh toan |
 | GET | `/api/users/by-email/:email` | Admin tim user theo email de lay voucher |
+| POST | `/api/payments/walkin` | Admin tao hoa don walk-in cho khach den truc tiep (co % giam + voucher) |
 
 ## Chay Project
 

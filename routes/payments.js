@@ -31,4 +31,7 @@ router.delete('/vouchers/:code', verifyToken, verifyAdmin, ctrl.deleteVoucher);
 // [POST] /api/payments/add-points - Admin cong diem thu cong cho user
 router.post('/add-points', verifyToken, verifyAdmin, ctrl.addPoints);
 
+// [POST] /api/payments/walkin - Admin tao hoa don truc tiep cho khach vang lai
+router.post('/walkin', verifyToken, verifyAdmin, ctrl.createWalkInPayment);
+
 module.exports = router;
