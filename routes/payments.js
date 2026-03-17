@@ -4,17 +4,20 @@ var router = express.Router();
 var ctrl = require('../controllers/paymentController');
 const { verifyToken, verifyAdmin } = require('../middlewares/auth');
 
-// [POST] /api/payments/pay/:appointmentId - Admin xac nhan thanh toan don, cong diem
+// [POST] /api/payments/pay/:appointmentId - Admin xac nhan thanh toan don, co ho tro voucher
 router.post('/pay/:appointmentId', verifyToken, verifyAdmin, ctrl.payAppointment);
 
 // [POST] /api/payments/redeem-voucher - User doi diem lay voucher
 router.post('/redeem-voucher', verifyToken, ctrl.redeemVoucher);
 
-// [GET] /api/payments/vouchers - Lay cac voucher dang hoat dong (ai cung xem duoc)
-router.get('/vouchers', ctrl.getVouchers);
+// [GET] /api/payments/invoices - Admin lay danh sach hoa don da thanh toan
+router.get('/invoices', verifyToken, verifyAdmin, ctrl.getInvoices);
 
 // [GET] /api/payments/vouchers/all - Admin: lay tat ca voucher
 router.get('/vouchers/all', verifyToken, verifyAdmin, ctrl.getAllVouchers);
+
+// [GET] /api/payments/vouchers - Lay cac voucher dang hoat dong (ai cung xem duoc)
+router.get('/vouchers', ctrl.getVouchers);
 
 // [POST] /api/payments/vouchers - Admin tao voucher moi
 router.post('/vouchers', verifyToken, verifyAdmin, ctrl.createVoucher);

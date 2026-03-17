@@ -6,6 +6,96 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Loan Spa - Đặt Lịch</title>
     <link rel="stylesheet" href="/css/style.css" />
+    <style>
+        /* ---- Danh sach dich vu dang checkbox ---- */
+        .service-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 260px;
+            overflow-y: auto;
+            border: 1px solid #f9a8d4;
+            border-radius: 8px;
+            padding: 10px;
+            background: #fff5f8;
+        }
+        .service-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .service-item:hover { background: #fce4ec; }
+        .service-item input[type="checkbox"] {
+            width: 17px;
+            height: 17px;
+            accent-color: #c2185b;
+            cursor: pointer;
+        }
+        .service-item label {
+            flex: 1;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #333;
+        }
+        .service-price {
+            font-size: 0.85rem;
+            color: #c2185b;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        /* ---- Thong tin gia tong ---- */
+        .price-summary {
+            background: #fff0f6;
+            border: 1px solid #f9a8d4;
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 0.9rem;
+            color: #555;
+        }
+        .price-summary .price-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+        }
+        .price-summary .price-total {
+            font-weight: bold;
+            font-size: 1rem;
+            color: #c2185b;
+            border-top: 1px solid #f9a8d4;
+            margin-top: 6px;
+            padding-top: 6px;
+        }
+        .price-summary .price-discount { color: #2e7d32; }
+
+        /* ---- Voucher input ---- */
+        .voucher-row {
+            display: flex;
+            gap: 8px;
+        }
+        .voucher-row input {
+            flex: 1;
+            text-transform: uppercase;
+        }
+        .voucher-row .btn-sm {
+            padding: 0 16px;
+            font-size: 0.88rem;
+            white-space: nowrap;
+        }
+        .voucher-msg {
+            font-size: 0.83rem;
+            margin-top: 4px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: none;
+        }
+        .voucher-msg.ok  { display:block; background:#e8f5e9; color:#2e7d32; }
+        .voucher-msg.err { display:block; background:#fce4ec; color:#c62828; }
+    </style>
 </head>
 
 <body>
@@ -50,16 +140,44 @@
                 <input type="email" id="custEmail" placeholder="example@gmail.com" />
             </div>
 
+            <!-- Chon nhieu dich vu bang checkbox -->
             <div class="form-group">
-                <label>Dịch vụ *</label>
-                <select id="custService">
-                    <option value="">-- Chọn dịch vụ --</option>
-                </select>
+                <label>Dịch vụ * <span style="color:#aaa;font-size:0.82rem">(chọn 1 hoặc nhiều)</span></label>
+                <div class="service-list" id="serviceList">
+                    <div style="color:#aaa;text-align:center;padding:20px">Đang tải dịch vụ...</div>
+                </div>
+            </div>
+
+            <!-- Tom tat gia -->
+            <div class="price-summary" id="priceSummary" style="display:none">
+                <div class="price-row">
+                    <span>🛒 Tổng dịch vụ (<span id="svcCount">0</span>)</span>
+                    <span id="priceBeforeDiscount">0 ₫</span>
+                </div>
+                <div class="price-row price-discount" id="discountRow" style="display:none">
+                    <span>🎟️ Voucher <b id="voucherAppliedCode"></b></span>
+                    <span>- <span id="priceDiscount">0 ₫</span></span>
+                </div>
+                <div class="price-row price-total">
+                    <span>💰 Tổng thanh toán</span>
+                    <span id="priceTotal">0 ₫</span>
+                </div>
             </div>
 
             <div class="form-group">
-                <label>Ngày & Giờ hẹn *</label>
+                <label>Ngày &amp; Giờ hẹn *</label>
                 <input type="datetime-local" id="custDate" />
+            </div>
+
+            <!-- Voucher (chi hien voi user da dang nhap) -->
+            <div class="form-group" id="voucherSection" style="display:none">
+                <label>Mã Voucher <span style="color:#aaa;font-size:0.82rem">(nếu có)</span></label>
+                <div class="voucher-row">
+                    <input type="text" id="voucherInput" placeholder="VD: GIAM10K" maxlength="30" />
+                    <button class="btn btn-sm" onclick="applyVoucher()">Áp Dụng</button>
+                    <button class="btn btn-sm btn-outline" onclick="removeVoucher()" id="btnRemoveVoucher" style="display:none">✕ Bỏ</button>
+                </div>
+                <div class="voucher-msg" id="voucherMsg"></div>
             </div>
 
             <div class="form-group">
@@ -86,48 +204,160 @@
         // Hien thi thong tin dang nhap tren nav
         renderAuthNav();
 
+        // Bien global luu trang thai
+        let allServices = [];       // danh sach tat ca dich vu
+        let appliedVoucher = null;  // { code, discount } — voucher dang ap dung
+
         // ========== HIEN THI ALERT ==========
         function showAlert(type, msg) {
             const el = document.getElementById('alert');
             el.className = 'alert show alert-' + type;
             el.textContent = msg;
-            // Cuon len tren de thay thong bao
             window.scrollTo({ top: 0, behavior: 'smooth' });
             if (type === 'success') {
                 setTimeout(() => { el.className = 'alert'; }, 5000);
             }
         }
 
-        // ========== LOAD DANH SACH DICH VU VÀO SELECT ==========
+        // ========== FORMAT TIEN ==========
+        function fmtPrice(n) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
+        }
+
+        // ========== CAP NHAT BANG GIA ==========
+        function updatePriceSummary() {
+            const checked = document.querySelectorAll('.svc-checkbox:checked');
+            const summary = document.getElementById('priceSummary');
+
+            if (checked.length === 0) {
+                summary.style.display = 'none';
+                return;
+            }
+
+            // Tinh tong truoc giam
+            let total = 0;
+            checked.forEach(cb => { total += Number(cb.dataset.price); });
+
+            document.getElementById('svcCount').textContent = checked.length;
+            document.getElementById('priceBeforeDiscount').textContent = fmtPrice(total);
+
+            // Hien thi giam gia neu co
+            const discountRow = document.getElementById('discountRow');
+            let discount = 0;
+            if (appliedVoucher) {
+                discount = appliedVoucher.discount;
+                document.getElementById('voucherAppliedCode').textContent = appliedVoucher.code;
+                document.getElementById('priceDiscount').textContent = fmtPrice(discount);
+                discountRow.style.display = 'flex';
+            } else {
+                discountRow.style.display = 'none';
+            }
+
+            const finalTotal = Math.max(0, total - discount);
+            document.getElementById('priceTotal').textContent = fmtPrice(finalTotal);
+            summary.style.display = 'block';
+        }
+
+        // ========== LOAD DANH SACH DICH VU ==========
         async function loadServices() {
             try {
                 const res = await callApi('GET', '/api/products');
-                const sel = document.getElementById('custService');
-                const list = res.data || [];
+                allServices = res.data || [];
+                const container = document.getElementById('serviceList');
 
-                if (list.length === 0) {
-                    sel.innerHTML = '<option value="">-- Chưa có dịch vụ nào --</option>';
+                if (allServices.length === 0) {
+                    container.innerHTML = '<div style="color:#aaa;text-align:center;padding:20px">Chưa có dịch vụ nào</div>';
                     return;
                 }
 
-                list.forEach(s => {
-                    const opt = document.createElement('option');
-                    opt.value = s._id;
-                    // Hien thi ten va gia dich vu
-                    const price = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(s.price);
-                    opt.textContent = `${s.name} — ${price}`;
-                    sel.appendChild(opt);
-                });
+                container.innerHTML = allServices.map(s => {
+                    const price = fmtPrice(s.price);
+                    return `
+                        <div class="service-item" onclick="toggleService('${s._id}')">
+                            <input type="checkbox" class="svc-checkbox"
+                                id="svc_${s._id}"
+                                value="${s._id}"
+                                data-price="${s.price}"
+                                onchange="updatePriceSummary()"
+                                onclick="event.stopPropagation()" />
+                            <label for="svc_${s._id}">${s.name}</label>
+                            <span class="service-price">${price}</span>
+                        </div>`;
+                }).join('');
 
                 // Tu dong chon dich vu neu co tham so serviceId tren URL
                 const urlParams = new URLSearchParams(window.location.search);
                 const serviceId = urlParams.get('serviceId');
                 if (serviceId) {
-                    sel.value = serviceId;
+                    const cb = document.getElementById('svc_' + serviceId);
+                    if (cb) { cb.checked = true; updatePriceSummary(); }
                 }
             } catch (err) {
                 console.error('[Booking] loi load dich vu:', err.message);
             }
+        }
+
+        // Toggle checkbox khi click vao row
+        function toggleService(id) {
+            const cb = document.getElementById('svc_' + id);
+            if (cb) { cb.checked = !cb.checked; updatePriceSummary(); }
+        }
+
+        // ========== APPLY VOUCHER ==========
+        async function applyVoucher() {
+            const code = document.getElementById('voucherInput').value.trim().toUpperCase();
+            const msgEl = document.getElementById('voucherMsg');
+
+            if (!code) {
+                msgEl.className = 'voucher-msg err';
+                msgEl.textContent = '❌ Vui lòng nhập mã voucher';
+                return;
+            }
+
+            if (!isLoggedIn()) {
+                msgEl.className = 'voucher-msg err';
+                msgEl.textContent = '❌ Bạn cần đăng nhập để dùng voucher';
+                return;
+            }
+
+            // Lay thong tin user de kiem tra voucher trong vi
+            try {
+                const meRes = await callApi('GET', '/api/auth/me');
+                const user = meRes.data;
+                // Tim voucher chua dung trong vi
+                const found = (user.vouchers || []).find(
+                    v => v.code === code && !v.isUsed
+                );
+
+                if (!found) {
+                    msgEl.className = 'voucher-msg err';
+                    msgEl.textContent = '❌ Mã voucher không hợp lệ hoặc đã được sử dụng';
+                    appliedVoucher = null;
+                } else {
+                    appliedVoucher = { code: found.code, discount: found.discount };
+                    msgEl.className = 'voucher-msg ok';
+                    msgEl.textContent = `✅ Áp dụng thành công! Giảm ${fmtPrice(found.discount)}`;
+                    document.getElementById('btnRemoveVoucher').style.display = 'inline-flex';
+                    document.getElementById('voucherInput').disabled = true;
+                    console.log('[Booking] Ap dung voucher:', appliedVoucher);
+                }
+                updatePriceSummary();
+            } catch (err) {
+                console.error('[Booking] loi kiem tra voucher:', err.message);
+                msgEl.className = 'voucher-msg err';
+                msgEl.textContent = '❌ Lỗi kiểm tra voucher: ' + err.message;
+            }
+        }
+
+        // ========== BO VOUCHER ==========
+        function removeVoucher() {
+            appliedVoucher = null;
+            document.getElementById('voucherInput').value = '';
+            document.getElementById('voucherInput').disabled = false;
+            document.getElementById('voucherMsg').className = 'voucher-msg';
+            document.getElementById('btnRemoveVoucher').style.display = 'none';
+            updatePriceSummary();
+            console.log('[Booking] Da bo voucher');
         }
 
         // ========== DAT LICH ==========
@@ -135,14 +365,17 @@
             const customerName = document.getElementById('custName').value.trim();
             const phone = document.getElementById('custPhone').value.trim();
             const email = document.getElementById('custEmail').value.trim();
-            const serviceId = document.getElementById('custService').value;
             const dateVal = document.getElementById('custDate').value;
             const note = document.getElementById('custNote').value.trim();
+
+            // Lay danh sach dich vu da chon
+            const checkedBoxes = document.querySelectorAll('.svc-checkbox:checked');
+            const serviceIds = Array.from(checkedBoxes).map(cb => cb.value);
 
             // Kiem tra cac truong bat buoc
             if (!customerName) { showAlert('error', '❌ Vui lòng nhập họ và tên!'); return; }
             if (!phone) { showAlert('error', '❌ Vui lòng nhập số điện thoại!'); return; }
-            if (!serviceId) { showAlert('error', '❌ Vui lòng chọn dịch vụ!'); return; }
+            if (serviceIds.length === 0) { showAlert('error', '❌ Vui lòng chọn ít nhất 1 dịch vụ!'); return; }
             if (!dateVal) { showAlert('error', '❌ Vui lòng chọn ngày giờ hẹn!'); return; }
 
             // Kiem tra ngay khong duoc trong qua khu
@@ -152,7 +385,17 @@
                 return;
             }
 
-            const body = { customerName, phone, email, serviceId, appointmentDate: appointmentDate.toISOString(), note };
+            const body = {
+                customerName,
+                phone,
+                email,
+                serviceIds,
+                appointmentDate: appointmentDate.toISOString(),
+                note,
+                voucherCode: appliedVoucher ? appliedVoucher.code : '',
+            };
+
+            console.log('[Booking] Gui dat lich:', body);
 
             try {
                 await callApi('POST', '/api/appointments', body);
@@ -161,10 +404,12 @@
                 document.getElementById('custName').value = '';
                 document.getElementById('custPhone').value = '';
                 document.getElementById('custEmail').value = '';
-                document.getElementById('custService').value = '';
                 document.getElementById('custDate').value = '';
                 document.getElementById('custNote').value = '';
-                // Neu dang nhap thi goi sang trang lich cua toi
+                document.querySelectorAll('.svc-checkbox:checked').forEach(cb => cb.checked = false);
+                removeVoucher();
+                updatePriceSummary();
+                // Neu dang nhap thi chuyen sang trang lich cua toi
                 setTimeout(() => {
                     if (isLoggedIn()) window.location.href = '/pages/my-bookings.html';
                 }, 2000);
@@ -178,6 +423,11 @@
         const now = new Date();
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
         document.getElementById('custDate').min = now.toISOString().slice(0, 16);
+
+        // Hien khu vuc voucher chi khi da dang nhap
+        if (isLoggedIn()) {
+            document.getElementById('voucherSection').style.display = 'block';
+        }
 
         // Khoi dong: load danh sach dich vu
         loadServices();

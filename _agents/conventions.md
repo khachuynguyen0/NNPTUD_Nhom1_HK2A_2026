@@ -77,6 +77,8 @@ description: Quy tac va luu y chung cho project Quan Ly Tiem Spa - Loan Spa
 | PUT | `/api/payments/vouchers/:code` | Admin cap nhat voucher |
 | DELETE | `/api/payments/vouchers/:code` | Admin xoa voucher |
 | POST | `/api/payments/add-points` | Admin cong diem thu cong cho user |
+| GET | `/api/payments/invoices` | Admin lay danh sach hoa don da thanh toan |
+| GET | `/api/users/by-email/:email` | Admin tim user theo email de lay voucher |
 
 ## Chay Project
 
@@ -97,6 +99,7 @@ npm start         # chay server (nodemon tu dong restart)
 | `/pages/services.html` | `public/pages/services.html` | Danh sach dich vu, CRUD chi Admin |
 | `/pages/add-service.html` | `public/pages/add-service.html` | Them dich vu moi, chi Admin truy cap |
 | `/pages/booking.html` | `public/pages/booking.html` | Form dat lich hen |
+| `/pages/payment.html` | `public/pages/payment.html` | Admin: thanh toan dich vu cho khach, tim voucher theo gmail |
 
 - File JS dung chung: `public/js/api.js` — ham `callApi`, `callApiForm`, `renderAuthNav`, `requireAdmin`, `logout`
 - Token JWT duoc luu trong `localStorage`: key `token`, `role`, `username`, `userId`

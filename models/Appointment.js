@@ -21,11 +21,14 @@ const appointmentSchema = new mongoose.Schema(
             default: '',
             trim: true,
         },
-        // Dich vu duoc chon (lien ket voi Product)
-        serviceId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Product',
+        // Danh sach dich vu duoc chon (nhieu dich vu, lien ket voi Product)
+        services: {
+            type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
             required: true,
+            validate: {
+                validator: function (v) { return v && v.length > 0; },
+                message: 'Phai chon it nhat 1 dich vu'
+            }
         },
         // Ngay va gio hen
         appointmentDate: {
@@ -43,8 +46,18 @@ const appointmentSchema = new mongoose.Schema(
             ref: 'User',
             required: false,
         },
-        // Tong tien (gia cua dich vu luc dat)
+        // Tong tien truoc giam gia
         totalAmount: {
+            type: Number,
+            default: 0,
+        },
+        // Ma voucher duoc ap dung (neu co)
+        voucherCode: {
+            type: String,
+            default: '',
+        },
+        // So tien duoc giam gia
+        discountAmount: {
             type: Number,
             default: 0,
         },

@@ -126,6 +126,7 @@
         <a href="/pages/services.html" class="nav-link">💆 Dịch Vụ</a>
         <a href="/pages/booking.html" class="nav-link">📅 Đặt Lịch</a>
         <a href="/pages/admin.html" class="nav-link active">⚙️ Quản Trị</a>
+        <a href="/pages/payment.html" class="nav-link" style="background:#388e3c;color:white">💳 Thanh Toán</a>
         <div id="authNav"></div>
     </nav>
 
@@ -144,6 +145,7 @@
             <button class="tab-btn" onclick="switchTab('services')">💆 Dịch Vụ</button>
             <button class="tab-btn" onclick="switchTab('accounts')">👥 Tài Khoản</button>
             <button class="tab-btn" onclick="switchTab('vouchers')">🎁 Voucher</button>
+            <button class="tab-btn" onclick="switchTab('invoices')">💰 Q.Lý Hóa Đơn</button>
         </div>
 
         <!-- ========== TAB 0: QUAN LY LICH HEN ========== -->
@@ -255,6 +257,31 @@
                 </thead>
                 <tbody id="voucherTableBody">
                     <tr><td colspan="6" style="text-align:center;color:#aaa;padding:30px">Đang tải...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ========== TAB 4: QUAN LY HOA DON ========== -->
+        <div id="tab-invoices" class="tab-content">
+            <div class="section-header">
+                <h3>💰 Lịch Sử Hóa Đơn Đã Thanh Toán</h3>
+                <span style="font-size:0.85rem;color:#888">Tổng: <b id="invoiceCount">0</b> hóa đơn</span>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Khách Hàng</th>
+                        <th>SĐT</th>
+                        <th>Dịch Vụ</th>
+                        <th>Voucher</th>
+                        <th>Giảm Giá</th>
+                        <th>Thành Tiền</th>
+                        <th>Điểm Cộng</th>
+                        <th>Ngày Thanh Toán</th>
+                    </tr>
+                </thead>
+                <tbody id="invoiceTableBody">
+                    <tr><td colspan="8" style="text-align:center;color:#aaa;padding:30px">Đang tải...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -379,6 +406,9 @@
                 btns[3].classList.add('active');
                 loadVouchers();
                 loadUsersForSelect();
+            } else if (name === 'invoices') {
+                btns[4].classList.add('active');
+                loadInvoices();
             }
         }
 
@@ -878,6 +908,49 @@
             } catch (err) {
                 console.error('[Admin] addPoints - loi:', err.message);
                 showAlert('error', '❌ ' + err.message);
+            }
+        }
+
+        // ============================================================
+        // PHAN 4: QUAN LY HOA DON
+        // ============================================================
+
+        // Tai danh sach hoa don da thanh toan
+        async function loadInvoices() {
+            try {
+                const res = await callApi('GET', '/api/payments/invoices');
+                const list = res.data || [];
+                document.getElementById('invoiceCount').textContent = list.length;
+                const tbody = document.getElementById('invoiceTableBody');
+
+                if (list.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:30px">Chưa có hóa đơn nào</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = list.map(a => {
+                    const serviceNames = Array.isArray(a.services)
+                        ? a.services.map(s => s.name || '').join(', ')
+                        : 'Dịch vụ spa';
+                    const pointsEarned = Math.floor((a.totalAmount || 0) / 10000);
+                    const customerName = a.userId ? a.userId.username || a.customerName : a.customerName;
+                    return `
+                        <tr>
+                            <td><b>${escHtml(a.customerName)}</b>${a.userId ? '<br/><span style="color:#888;font-size:0.78rem">' + escHtml(a.userId.email || '') + '</span>' : ''}</td>
+                            <td>${escHtml(a.phone)}</td>
+                            <td style="max-width:180px;color:#555">${escHtml(serviceNames)}</td>
+                            <td><b style="color:#6a1b9a">${a.voucherCode ? a.voucherCode : '<span style="color:#aaa">—</span>'}</b></td>
+                            <td style="color:#e91e8c">${a.discountAmount ? '- ' + formatPrice(a.discountAmount) : '—'}</td>
+                            <td><b style="color:#c2185b">${formatPrice(a.totalAmount)}</b></td>
+                            <td><span class="badge" style="background:#e8f5e9;color:#2e7d32">+${pointsEarned} điểm</span></td>
+                            <td style="color:#666;font-size:0.82rem">${new Date(a.updatedAt).toLocaleString('vi-VN')}</td>
+                        </tr>
+                    `;
+                }).join('');
+                console.log(`[Admin] loadInvoices - Hien thi ${list.length} hoa don`);
+            } catch (err) {
+                console.error('[Admin] loadInvoices - loi:', err.message);
+                showAlert('error', '❌ Lỗi tải hóa đơn: ' + err.message);
             }
         }
 

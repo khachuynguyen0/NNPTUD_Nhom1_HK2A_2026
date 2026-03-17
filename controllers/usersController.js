@@ -80,4 +80,31 @@ const remove = async (req, res) => {
     }
 };
 
-module.exports = { getAll, getOne, create, update, remove };
+// [GET] /api/users/by-email/:email - Admin tim kiem user theo email de lay voucher
+const getUserByEmail = async (req, res) => {
+    try {
+        const email = req.params.email.toLowerCase();
+        const user = await User.findOne({ email }).select('-password');
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'Khong tim thay tai khoan voi email nay' });
+        }
+        // Chi tra ve cac voucher chua su dung
+        const availableVouchers = user.vouchers.filter(v => !v.isUsed);
+        console.log(`[Users] getUserByEmail - Tim thay: ${user.username}, ${availableVouchers.length} voucher kha dung`);
+        res.json({
+            success: true,
+            data: {
+                userId: user._id,
+                username: user.username,
+                email: user.email,
+                points: user.points,
+                vouchers: availableVouchers
+            }
+        });
+    } catch (error) {
+        console.error('[Users] getUserByEmail - Loi:', error.message);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+module.exports = { getAll, getOne, create, update, remove, getUserByEmail };

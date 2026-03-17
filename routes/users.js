@@ -7,6 +7,9 @@ const { verifyToken, verifyAdmin } = require('../middlewares/auth');
 // GET /api/users
 router.get('/', verifyToken, verifyAdmin, ctrl.getAll);
 
+// GET /api/users/by-email/:email - Phai dat TRUOC /:id de tranh Express hieu 'by-email' la id
+router.get('/by-email/:email', verifyToken, verifyAdmin, ctrl.getUserByEmail);
+
 // GET /api/users/:id
 router.get('/:id', verifyToken, verifyAdmin, ctrl.getOne);
 

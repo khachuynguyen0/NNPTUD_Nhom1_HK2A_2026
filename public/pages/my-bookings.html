@@ -85,13 +85,14 @@
                     <th>#</th>
                     <th>Dịch Vụ</th>
                     <th>Ngày Hẹn</th>
+                    <th>Voucher / Giảm</th>
                     <th>Tổng Tiền</th>
                     <th>Trạng Thái</th>
                     <th style="text-align:center">Thao Tác</th>
                 </tr>
             </thead>
             <tbody id="bookingTableBody">
-                <tr><td colspan="6" class="empty-msg">Đang tải...</td></tr>
+                <tr><td colspan="7" class="empty-msg">Đang tải...</td></tr>
             </tbody>
         </table>
 
@@ -164,7 +165,7 @@
                 if (list.length === 0) {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="6" class="empty-msg">
+                            <td colspan="7" class="empty-msg">
                                 Bạn chưa có lịch hẹn nào.<br>
                                 <a href="/pages/booking.html" class="btn" style="margin-top:16px;display:inline-block">📅 Đặt Lịch Ngay</a>
                             </td>
@@ -174,7 +175,18 @@
 
                 tbody.innerHTML = list.map((appt, i) => {
                     const st = statusLabel(appt.status);
-                    const svcName = appt.serviceId?.name || 'Dịch vụ không xác định';
+
+                    // Hien thi nhieu dich vu (mang services da populate)
+                    const svcNames = (appt.services && appt.services.length > 0)
+                        ? appt.services.map(s => s.name || 'Không rõ').join('<br>')
+                        : (appt.serviceId?.name || 'Dịch vụ không xác định');
+
+                    // Hien thi voucher va giam gia (neu co)
+                    const voucherInfo = appt.voucherCode
+                        ? `<span style="color:#2e7d32;font-size:0.82rem">🎟️ ${appt.voucherCode}</span><br>
+                           <span style="color:#c62828;font-size:0.82rem">- ${formatPrice(appt.discountAmount)}</span>`
+                        : '<span style="color:#aaa;font-size:0.8rem">—</span>';
+
                     // Chi cho huy khi con dang cho
                     const cancelBtn = appt.status === 'pending'
                         ? `<button class="btn btn-sm btn-danger" onclick="askCancel('${appt._id}')">❌ Hủy</button>`
@@ -182,8 +194,9 @@
                     return `
                         <tr>
                             <td>${i + 1}</td>
-                            <td><b>${svcName}</b></td>
+                            <td><b>${svcNames}</b></td>
                             <td>${formatDate(appt.appointmentDate)}</td>
+                            <td>${voucherInfo}</td>
                             <td>${formatPrice(appt.totalAmount)}</td>
                             <td><span class="status-badge ${st.cls}">${st.text}</span></td>
                             <td style="text-align:center">${cancelBtn}</td>

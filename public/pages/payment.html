@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loan Spa - Thanh Toán</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <style>
+        /* ====== TAB ====== */
+        .tab-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #fce4ec;
+            padding-bottom: 0;
+        }
+        .tab-btn {
+            padding: 10px 24px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #888;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: color 0.2s;
+            margin-bottom: -2px;
+        }
+        .tab-btn.active {
+            color: #c2185b;
+            border-bottom-color: #c2185b;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* ====== BANG DANH SACH ====== */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(194,24,91,0.06);
+        }
+        .data-table th {
+            background: #fce4ec;
+            color: #c2185b;
+            padding: 12px 14px;
+            text-align: left;
+            font-size: 0.88rem;
+        }
+        .data-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #fff0f5;
+            font-size: 0.88rem;
+            vertical-align: middle;
+        }
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table tr:hover td { background: #fff5f7; }
+
+        /* ====== SECTION HEADER ====== */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+        .section-header h3 {
+            color: #c2185b;
+            font-size: 1.1rem;
+        }
+
+        /* ====== BADGE ====== */
+        .badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: bold;
+        }
+        .badge-confirmed { background: #e3f2fd; color: #1565c0; }
+        .badge-pending   { background: #fff3cd; color: #856404; }
+
+        /* ====== MODAL THANH TOAN ====== */
+        #payModalOverlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+        }
+        #payModalOverlay.open { display: flex; }
+
+        #payModal {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.18);
+        }
+        #payModal h3 {
+            color: #c2185b;
+            font-size: 1.15rem;
+            margin-bottom: 20px;
+        }
+
+        /* ====== TONG KET HOA DON ====== */
+        .invoice-summary {
+            background: #fff5f7;
+            border: 1px solid #fce4ec;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .invoice-summary .row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        .invoice-summary .row:last-child {
+            margin-bottom: 0;
+            padding-top: 10px;
+            border-top: 1px dashed #f8bbd0;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #c2185b;
+        }
+        .invoice-summary .row label {
+            color: #666;
+            font-size: inherit;
+            font-weight: inherit;
+        }
+
+        /* ====== VOUCHER BOX ====== */
+        .voucher-box {
+            background: #f3e5f5;
+            border: 1px solid #ce93d8;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+        }
+        .voucher-box h4 {
+            color: #6a1b9a;
+            font-size: 0.92rem;
+            margin-bottom: 10px;
+        }
+        .voucher-search-row {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+        .voucher-search-row input {
+            flex: 1;
+            padding: 9px 12px;
+            border: 1px solid #ce93d8;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            outline: none;
+        }
+        .voucher-search-row input:focus { border-color: #8e24aa; }
+        #voucherSelect {
+            width: 100%;
+            margin-top: 10px;
+            padding: 9px 12px;
+            border: 1px solid #ce93d8;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            display: none;
+        }
+        #voucherMsg {
+            font-size: 0.82rem;
+            margin-top: 6px;
+            color: #6a1b9a;
+        }
+
+        /* ====== FILTER BAR ====== */
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .filter-bar input {
+            padding: 8px 12px;
+            border: 1px solid #f8bbd0;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            outline: none;
+            flex: 1;
+            min-width: 160px;
+        }
+        .filter-bar input:focus { border-color: #e91e8c; }
+    </style>
+</head>
+
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="logo"><img src="/images/logo_loan_Spa.png" alt="Logo"></div>
+        <h1>Loan Spa</h1>
+        <span class="tagline">Trang Thanh Toán</span>
+    </header>
+
+    <!-- Nav -->
+    <nav class="nav">
+        <a href="/" class="nav-link">🏠 Trang Chủ</a>
+        <a href="/pages/services.html" class="nav-link">💆 Dịch Vụ</a>
+        <a href="/pages/booking.html" class="nav-link">📅 Đặt Lịch</a>
+        <a href="/pages/admin.html" class="nav-link">⚙️ Quản Trị</a>
+        <a href="/pages/payment.html" class="nav-link active">💳 Thanh Toán</a>
+        <div id="authNav"></div>
+    </nav>
+
+    <!-- Main -->
+    <main class="main">
+
+        <div id="alert" class="alert"></div>
+
+        <div class="page-header">
+            <h2>💳 Trang Thanh Toán Dịch Vụ</h2>
+        </div>
+
+        <!-- FILTER -->
+        <div class="filter-bar">
+            <input type="text" id="searchInput" placeholder="🔍 Tìm theo tên khách hoặc SĐT..." oninput="filterTable()" />
+            <button class="btn btn-sm" onclick="loadPending()">🔄 Làm mới</button>
+        </div>
+
+        <!-- BANG LICH HEN CHO THANH TOAN -->
+        <div class="section-header">
+            <h3>📋 Lịch Hẹn Chờ Thanh Toán</h3>
+            <span id="pendingCount" style="font-size:0.85rem;color:#888"></span>
+        </div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Khách Hàng</th>
+                    <th>SĐT</th>
+                    <th>Dịch Vụ</th>
+                    <th>Ngày Hẹn</th>
+                    <th>Tổng Tiền</th>
+                    <th style="text-align:center">Thao Tác</th>
+                </tr>
+            </thead>
+            <tbody id="pendingTableBody">
+                <tr><td colspan="6" style="text-align:center;color:#aaa;padding:30px">Đang tải...</td></tr>
+            </tbody>
+        </table>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>🌸 Loan Spa &copy; 2026</p>
+    </footer>
+
+    <!-- ========== MODAL THANH TOAN ========== -->
+    <div id="payModalOverlay">
+        <div id="payModal">
+            <h3>💳 Xác Nhận Thanh Toán</h3>
+
+            <!-- Thong tin lich hen -->
+            <div class="invoice-summary" id="apptSummary">
+                <div class="row"><label>Khách hàng</label><span id="sumCustomer">—</span></div>
+                <div class="row"><label>Dịch vụ</label><span id="sumServices">—</span></div>
+                <div class="row"><label>Tổng tiền dịch vụ</label><span id="sumBase">—</span></div>
+            </div>
+
+            <!-- Voucher theo gmail -->
+            <div class="voucher-box">
+                <h4>🎟️ Voucher Theo Tài Khoản Khách (Tùy Chọn)</h4>
+                <div class="voucher-search-row">
+                    <input type="email" id="customerEmail" placeholder="Gmail của khách hàng..." />
+                    <button class="btn btn-sm" onclick="findVouchers()">🔍 Tìm</button>
+                </div>
+                <select id="voucherSelect" onchange="applyVoucher()">
+                    <option value="">-- Không dùng voucher --</option>
+                </select>
+                <div id="voucherMsg"></div>
+            </div>
+
+            <!-- Tong ket -->
+            <div class="invoice-summary">
+                <div class="row"><label>Tổng tiền dịch vụ</label><span id="finalBase">0 ₫</span></div>
+                <div class="row"><label>Giảm giá (Voucher)</label><span id="finalDiscount" style="color:#e91e8c">- 0 ₫</span></div>
+                <div class="row"><label>💰 Thành Tiền</label><span id="finalTotal">0 ₫</span></div>
+            </div>
+
+            <!-- Nut hanh dong -->
+            <div class="form-actions">
+                <button class="btn btn-outline" onclick="closePayModal()">Hủy</button>
+                <button class="btn" id="btnConfirmPay" onclick="confirmPay()" style="background:#388e3c">
+                    ✅ Xác Nhận Thanh Toán
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        // Bao ve trang: chi admin moi duoc vao
+        requireAdmin();
+        renderAuthNav();
+
+        // ========== BIEN TOAN CUC ==========
+        let allPending = [];        // tat ca lich hen cho thanh toan
+        let currentApptId = null;   // id lich hen dang thanh toan
+        let currentBaseAmount = 0;  // tong tien goc cua lich hen dang chon
+        let selectedVoucherCode = '';   // ma voucher duoc chon
+        let selectedDiscount = 0;       // so tien giam gia
+
+        // ========== ALERT ==========
+        function showAlert(type, msg) {
+            const el = document.getElementById('alert');
+            el.className = 'alert show alert-' + type;
+            el.textContent = msg;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => { el.className = 'alert'; }, 3500);
+        }
+
+        // ========== FORMAT ==========
+        function formatPrice(p) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p || 0);
+        }
+        function formatDateTime(d) {
+            return new Date(d).toLocaleString('vi-VN', {
+                weekday: 'short', year: 'numeric', month: '2-digit',
+                day: '2-digit', hour: '2-digit', minute: '2-digit'
+            });
+        }
+        function escHtml(str) {
+            return (str || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        // ========== TAI DANH SACH CHO THANH TOAN ==========
+        async function loadPending() {
+            try {
+                const res = await callApi('GET', '/api/appointments');
+                // Chi lay lich da xac nhan (confirmed) va chua thanh toan
+                allPending = (res.data || []).filter(
+                    a => a.status === 'confirmed' && a.paymentStatus === 'pending'
+                );
+                document.getElementById('pendingCount').textContent =
+                    `${allPending.length} lịch hẹn chờ thanh toán`;
+                console.log(`[Payment] loadPending - ${allPending.length} lich cho thanh toan`);
+                renderTable(allPending);
+            } catch (err) {
+                console.error('[Payment] loadPending - loi:', err.message);
+                showAlert('error', '❌ Lỗi tải dữ liệu: ' + err.message);
+            }
+        }
+
+        // Ve bang tu du lieu
+        function renderTable(list) {
+            const tbody = document.getElementById('pendingTableBody');
+            if (list.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:30px">Không có lịch hẹn nào chờ thanh toán</td></tr>';
+                return;
+            }
+            tbody.innerHTML = list.map(a => {
+                // Ten cac dich vu
+                const serviceNames = Array.isArray(a.services)
+                    ? a.services.map(s => s.name || s).join(', ')
+                    : 'Dịch vụ spa';
+                // Tinh tong tien goc tu danh sach dich vu
+                const baseAmount = Array.isArray(a.services)
+                    ? a.services.reduce((sum, s) => sum + (s.price || 0), 0)
+                    : a.totalAmount;
+                return `
+                    <tr>
+                        <td><b>${escHtml(a.customerName)}</b></td>
+                        <td>${escHtml(a.phone)}</td>
+                        <td style="max-width:200px">${escHtml(serviceNames)}</td>
+                        <td>${formatDateTime(a.appointmentDate)}</td>
+                        <td><b style="color:#c2185b">${formatPrice(baseAmount)}</b></td>
+                        <td style="text-align:center">
+                            <button class="btn btn-sm" style="background:#388e3c;color:white;border:none"
+                                onclick="openPayModal('${a._id}', ${JSON.stringify(escHtml(a.customerName))}, ${JSON.stringify(serviceNames)}, ${baseAmount}, ${JSON.stringify(a.email || '')})">
+                                💳 Thanh Toán
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Loc bang theo tu khoa tim kiem
+        function filterTable() {
+            const kw = document.getElementById('searchInput').value.trim().toLowerCase();
+            if (!kw) {
+                renderTable(allPending);
+                return;
+            }
+            const filtered = allPending.filter(a =>
+                (a.customerName || '').toLowerCase().includes(kw) ||
+                (a.phone || '').includes(kw)
+            );
+            renderTable(filtered);
+        }
+
+        // ========== MODAL THANH TOAN ==========
+        function openPayModal(apptId, customerName, serviceNames, baseAmount, email) {
+            currentApptId = apptId;
+            currentBaseAmount = baseAmount;
+            selectedVoucherCode = '';
+            selectedDiscount = 0;
+
+            // Dien thong tin lich hen
+            document.getElementById('sumCustomer').textContent = customerName;
+            document.getElementById('sumServices').textContent = serviceNames;
+            document.getElementById('sumBase').textContent = formatPrice(baseAmount);
+
+            // Reset voucher
+            document.getElementById('customerEmail').value = email || '';
+            document.getElementById('voucherSelect').style.display = 'none';
+            document.getElementById('voucherSelect').innerHTML = '<option value="">-- Không dùng voucher --</option>';
+            document.getElementById('voucherMsg').textContent = '';
+
+            // Cap nhat tong ket
+            updateTotal();
+
+            document.getElementById('payModalOverlay').classList.add('open');
+            console.log(`[Payment] openPayModal - appt: ${apptId}, base: ${baseAmount}`);
+        }
+
+        function closePayModal() {
+            document.getElementById('payModalOverlay').classList.remove('open');
+            currentApptId = null;
+        }
+
+        // Tinh lai tong tien khi thay doi
+        function updateTotal() {
+            const finalAmt = Math.max(0, currentBaseAmount - selectedDiscount);
+            document.getElementById('finalBase').textContent = formatPrice(currentBaseAmount);
+            document.getElementById('finalDiscount').textContent = '- ' + formatPrice(selectedDiscount);
+            document.getElementById('finalTotal').textContent = formatPrice(finalAmt);
+        }
+
+        // Tim voucher theo email khach
+        async function findVouchers() {
+            const email = document.getElementById('customerEmail').value.trim();
+            const msgEl = document.getElementById('voucherMsg');
+            const sel = document.getElementById('voucherSelect');
+
+            if (!email) {
+                msgEl.textContent = '⚠️ Vui lòng nhập email khách hàng';
+                msgEl.style.color = '#e65100';
+                return;
+            }
+
+            msgEl.textContent = 'Đang tìm kiếm...';
+            msgEl.style.color = '#6a1b9a';
+
+            try {
+                const res = await callApi('GET', `/api/users/by-email/${encodeURIComponent(email)}`);
+                const userData = res.data;
+                const vouchers = userData.vouchers || [];
+
+                console.log(`[Payment] findVouchers - ${userData.username}: ${vouchers.length} voucher kha dung`);
+
+                if (vouchers.length === 0) {
+                    msgEl.textContent = `✅ Tìm thấy tài khoản "${userData.username}" nhưng không có voucher khả dụng.`;
+                    msgEl.style.color = '#555';
+                    sel.style.display = 'none';
+                    return;
+                }
+
+                // Hien dropdown chon voucher
+                sel.innerHTML = '<option value="">-- Không dùng voucher --</option>';
+                vouchers.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v.code;
+                    opt.dataset.discount = v.discount;
+                    opt.textContent = `${v.code} — Giảm ${formatPrice(v.discount)}`;
+                    sel.appendChild(opt);
+                });
+                sel.style.display = 'block';
+
+                msgEl.textContent = `✅ Tìm thấy ${vouchers.length} voucher của "${userData.username}"`;
+                msgEl.style.color = '#2e7d32';
+
+                // Reset lai voucher da chon
+                selectedVoucherCode = '';
+                selectedDiscount = 0;
+                updateTotal();
+            } catch (err) {
+                console.error('[Payment] findVouchers - loi:', err.message);
+                msgEl.textContent = '❌ ' + err.message;
+                msgEl.style.color = '#c62828';
+                sel.style.display = 'none';
+            }
+        }
+
+        // Ap dung voucher duoc chon tu dropdown
+        function applyVoucher() {
+            const sel = document.getElementById('voucherSelect');
+            const chosen = sel.options[sel.selectedIndex];
+            if (!chosen || !chosen.value) {
+                selectedVoucherCode = '';
+                selectedDiscount = 0;
+            } else {
+                selectedVoucherCode = chosen.value;
+                selectedDiscount = Number(chosen.dataset.discount) || 0;
+            }
+            updateTotal();
+            console.log(`[Payment] applyVoucher - ${selectedVoucherCode}, giam: ${selectedDiscount}`);
+        }
+
+        // Xac nhan thanh toan
+        async function confirmPay() {
+            if (!currentApptId) return;
+            const btn = document.getElementById('btnConfirmPay');
+            btn.disabled = true;
+            btn.textContent = 'Đang xử lý...';
+
+            const userEmail = document.getElementById('customerEmail').value.trim();
+
+            try {
+                const body = {};
+                if (selectedVoucherCode) {
+                    body.voucherCode = selectedVoucherCode;
+                    body.userEmail = userEmail;
+                }
+
+                const res = await callApi('POST', `/api/payments/pay/${currentApptId}`, body);
+                let msg = '✅ Thanh toán thành công!';
+                if (res.pointsEarned > 0) {
+                    msg += ` Đã cộng ${res.pointsEarned} điểm tích lũy cho khách hàng.`;
+                }
+                if (selectedVoucherCode) {
+                    msg += ` Đã áp dụng voucher ${selectedVoucherCode}.`;
+                }
+                showAlert('success', msg);
+                console.log(`[Payment] confirmPay - appt: ${currentApptId}, diem: ${res.pointsEarned}`);
+                closePayModal();
+                loadPending(); // Tai lai danh sach
+            } catch (err) {
+                console.error('[Payment] confirmPay - loi:', err.message);
+                showAlert('error', '❌ Lỗi: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '✅ Xác Nhận Thanh Toán';
+            }
+        }
+
+        // Dong modal khi click ben ngoai
+        document.getElementById('payModalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closePayModal();
+        });
+
+        // Cho phep nhan Enter trong o email de tim voucher
+        document.getElementById('customerEmail').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') findVouchers();
+        });
+
+        // ========== KHOI DONG ==========
+        loadPending();
+    </script>
+
+</body>
+
+</html>

@@ -1,12 +1,14 @@
 // Controller xu ly lich hen (appointments)
 const Appointment = require('../models/Appointment');
+const Product = require('../models/Product');
+const User = require('../models/User');
 const { sendConfirmEmail } = require('../config/mailer');
 
 // GET /api/appointments - Admin: lay tat ca lich hen
 const getAll = async (req, res) => {
     try {
         const list = await Appointment.find()
-            .populate('serviceId', 'name price')
+            .populate('services', 'name price')
             .sort({ appointmentDate: 1 });
         console.log(`[Appointment] getAll - Tim thay ${list.length} lich hen`);
         res.json({ success: true, data: list });
@@ -21,7 +23,7 @@ const getMyAppointments = async (req, res) => {
     try {
         const userId = req.user.id;
         const list = await Appointment.find({ userId })
-            .populate('serviceId', 'name price image')
+            .populate('services', 'name price image')
             .sort({ appointmentDate: -1 }); // moi nhat len tren
         console.log(`[Appointment] getMyAppointments - User ${req.user.username}: ${list.length} lich hen`);
         res.json({ success: true, data: list });
@@ -35,7 +37,7 @@ const getMyAppointments = async (req, res) => {
 const getOne = async (req, res) => {
     try {
         const item = await Appointment.findById(req.params.id)
-            .populate('serviceId', 'name price');
+            .populate('services', 'name price');
         if (!item) {
             return res.status(404).json({ success: false, message: 'Khong tim thay lich hen' });
         }
@@ -50,15 +52,23 @@ const getOne = async (req, res) => {
 // POST /api/appointments - tao lich hen moi (cho phep khach hoac user dang nhap dat lich)
 const create = async (req, res) => {
     try {
-        const { customerName, phone, email, serviceId, appointmentDate, note } = req.body;
-        console.log(`[Appointment] create - ${customerName} | ${phone} | ${serviceId}`);
+        const { customerName, phone, email, serviceIds, appointmentDate, note, voucherCode } = req.body;
+        console.log(`[Appointment] create - ${customerName} | ${phone} | serviceIds: ${serviceIds}`);
 
-        // Lay thong tin dich vu de lay gia
-        const Product = require('../models/Product');
-        const service = await Product.findById(serviceId);
-        if (!service) {
-            return res.status(404).json({ success: false, message: 'Khong tim thay dich vu nay' });
+        // Kiem tra phai co it nhat 1 dich vu
+        if (!serviceIds || !Array.isArray(serviceIds) || serviceIds.length === 0) {
+            return res.status(400).json({ success: false, message: 'Phai chon it nhat 1 dich vu' });
         }
+
+        // Lay thong tin cac dich vu de tinh tong tien
+        const serviceList = await Product.find({ _id: { $in: serviceIds } });
+        if (serviceList.length === 0) {
+            return res.status(404).json({ success: false, message: 'Khong tim thay dich vu nao hop le' });
+        }
+
+        // Tinh tong tien tat ca dich vu
+        const totalBeforeDiscount = serviceList.reduce((sum, s) => sum + s.price, 0);
+        console.log(`[Appointment] create - Tong tien truoc giam: ${totalBeforeDiscount}`);
 
         // Xu ly token thu cong neu co (cho phep khach hoac user dang nhap dat lich)
         let userId = null;
@@ -74,15 +84,55 @@ const create = async (req, res) => {
             }
         }
 
+        // Xu ly voucher (chi ap dung neu co userId va co ma voucher)
+        let appliedVoucherCode = '';
+        let discountAmount = 0;
+
+        if (voucherCode && voucherCode.trim() !== '' && userId) {
+            const user = await User.findById(userId);
+            if (user) {
+                // Tim voucher trong vi user (chua dung)
+                const voucherIdx = user.vouchers.findIndex(
+                    v => v.code === voucherCode.trim().toUpperCase() && !v.isUsed
+                );
+                if (voucherIdx !== -1) {
+                    discountAmount = user.vouchers[voucherIdx].discount;
+                    appliedVoucherCode = user.vouchers[voucherIdx].code;
+                    // Danh dau voucher da duoc su dung
+                    user.vouchers[voucherIdx].isUsed = true;
+                    await user.save();
+                    console.log(`[Appointment] create - Ap dung voucher ${appliedVoucherCode}, giam: ${discountAmount}`);
+                } else {
+                    // Voucher khong hop le hoac da dung — bao loi
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Mã voucher không hợp lệ hoặc đã được sử dụng'
+                    });
+                }
+            }
+        } else if (voucherCode && voucherCode.trim() !== '' && !userId) {
+            // Khach vang lai khong the dung voucher
+            return res.status(400).json({
+                success: false,
+                message: 'Bạn cần đăng nhập để sử dụng voucher'
+            });
+        }
+
+        // Tinh tong tien sau giam gia (khong am)
+        const totalAmount = Math.max(0, totalBeforeDiscount - discountAmount);
+        console.log(`[Appointment] create - Giam: ${discountAmount}, Tong sau giam: ${totalAmount}`);
+
         const newItem = new Appointment({
             customerName,
             phone,
             email: email || '',
-            serviceId,
+            services: serviceIds,
             appointmentDate,
             note,
-            userId: userId,
-            totalAmount: service.price
+            userId,
+            totalAmount,
+            voucherCode: appliedVoucherCode,
+            discountAmount,
         });
         const saved = await newItem.save();
         console.log(`[Appointment] create - Da tao lich hen id: ${saved._id}`);
@@ -97,7 +147,7 @@ const create = async (req, res) => {
 const confirm = async (req, res) => {
     try {
         const appt = await Appointment.findById(req.params.id)
-            .populate('serviceId', 'name price');
+            .populate('services', 'name price');
         if (!appt) {
             return res.status(404).json({ success: false, message: 'Khong tim thay lich hen' });
         }
@@ -107,13 +157,16 @@ const confirm = async (req, res) => {
         await appt.save();
         console.log(`[Appointment] confirm - Da xac nhan lich hen id: ${appt._id}`);
 
+        // Tong hop ten dich vu de gui email
+        const serviceNames = (appt.services || []).map(s => s.name).join(', ') || 'Dich vu spa';
+
         // Gui email thong bao neu co email khach hang
         if (appt.email) {
             try {
                 await sendConfirmEmail({
                     toEmail: appt.email,
                     customerName: appt.customerName,
-                    serviceName: appt.serviceId?.name || 'Dich vu spa',
+                    serviceName: serviceNames,
                     appointmentDate: appt.appointmentDate,
                 });
                 console.log(`[Appointment] confirm - Da gui email den: ${appt.email}`);

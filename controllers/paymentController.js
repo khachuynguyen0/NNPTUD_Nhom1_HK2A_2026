@@ -2,11 +2,14 @@ const Appointment = require('../models/Appointment');
 const User = require('../models/User');
 const Voucher = require('../models/Voucher');
 
-// [POST] /api/payments/pay/:appointmentId - Admin xac nhan thanh toan + cong diem
+// [POST] /api/payments/pay/:appointmentId - Admin xac nhan thanh toan + ap dung voucher + cong diem
 const payAppointment = async (req, res) => {
     try {
         const { appointmentId } = req.params;
-        const appointment = await Appointment.findById(appointmentId);
+        const { voucherCode, userEmail } = req.body; // admin co the gui kem voucher va email khach
+
+        const appointment = await Appointment.findById(appointmentId)
+            .populate('services', 'name price');
 
         if (!appointment) {
             return res.status(404).json({ success: false, message: 'Khong tim thay lich hen' });
@@ -16,16 +19,58 @@ const payAppointment = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Lich hen nay da duoc thanh toan' });
         }
 
-        // 1. Danh dau la da thanh toan
+        // 1. Xu ly voucher (neu admin nhap email khach va ma voucher)
+        let appliedVoucherCode = appointment.voucherCode || '';
+        let discountAmount = appointment.discountAmount || 0;
+
+        if (voucherCode && voucherCode.trim() !== '') {
+            // Tim user theo email de lay voucher
+            let targetUser = null;
+            if (userEmail && userEmail.trim() !== '') {
+                targetUser = await User.findOne({ email: userEmail.trim().toLowerCase() });
+            } else if (appointment.userId) {
+                targetUser = await User.findById(appointment.userId);
+            }
+
+            if (targetUser) {
+                const voucherIdx = targetUser.vouchers.findIndex(
+                    v => v.code === voucherCode.trim().toUpperCase() && !v.isUsed
+                );
+                if (voucherIdx !== -1) {
+                    discountAmount = targetUser.vouchers[voucherIdx].discount;
+                    appliedVoucherCode = targetUser.vouchers[voucherIdx].code;
+                    // Danh dau voucher da duoc su dung
+                    targetUser.vouchers[voucherIdx].isUsed = true;
+                    await targetUser.save();
+                    console.log(`[Payment] payAppointment - Ap dung voucher ${appliedVoucherCode}, giam: ${discountAmount}`);
+                } else {
+                    return res.status(400).json({ success: false, message: 'Voucher khong hop le hoac da duoc su dung' });
+                }
+            } else {
+                return res.status(404).json({ success: false, message: 'Khong tim thay tai khoan khach hang' });
+            }
+        }
+
+        // 2. Tinh tong tien sau giam gia
+        const baseAmount = appointment.services
+            ? appointment.services.reduce((sum, s) => sum + (s.price || 0), 0)
+            : appointment.totalAmount;
+        const finalAmount = Math.max(0, baseAmount - discountAmount);
+
+        // 3. Cap nhat lich hen
         appointment.paymentStatus = 'paid';
-        appointment.status = 'confirmed';
+        appointment.status = 'done';
+        appointment.voucherCode = appliedVoucherCode;
+        appointment.discountAmount = discountAmount;
+        appointment.totalAmount = finalAmount;
         await appointment.save();
 
-        // 2. Cong diem cho user (ti le: 10000 VND = 1 diem)
+        // 4. Cong diem cho user (ti le: 10000 VND = 1 diem)
         let pointsEarned = 0;
-        if (appointment.userId && appointment.totalAmount > 0) {
-            pointsEarned = Math.floor(appointment.totalAmount / 10000);
-            const user = await User.findById(appointment.userId);
+        const userId = appointment.userId;
+        if (userId && finalAmount > 0) {
+            pointsEarned = Math.floor(finalAmount / 10000);
+            const user = await User.findById(userId);
             if (user) {
                 user.points += pointsEarned;
                 await user.save();
@@ -33,7 +78,7 @@ const payAppointment = async (req, res) => {
             }
         }
 
-        console.log(`[Payment] payAppointment - Thanh toan don: ${appointmentId}, Diem thuong: ${pointsEarned}`);
+        console.log(`[Payment] payAppointment - Thanh toan don: ${appointmentId}, Tong: ${finalAmount}, Diem thuong: ${pointsEarned}`);
         res.json({
             success: true,
             message: 'Thanh toan thanh cong',
@@ -215,6 +260,21 @@ const addPoints = async (req, res) => {
     }
 };
 
+// [GET] /api/payments/invoices - Admin lay danh sach hoa don da thanh toan
+const getInvoices = async (req, res) => {
+    try {
+        const list = await Appointment.find({ paymentStatus: 'paid' })
+            .populate('services', 'name price')
+            .populate('userId', 'username email')
+            .sort({ updatedAt: -1 }); // moi nhat len tren
+        console.log(`[Payment] getInvoices - Tim thay ${list.length} hoa don da thanh toan`);
+        res.json({ success: true, data: list });
+    } catch (error) {
+        console.error('[Payment] getInvoices - Loi:', error.message);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 module.exports = {
     payAppointment,
     redeemVoucher,
@@ -223,5 +283,6 @@ module.exports = {
     createVoucher,
     updateVoucher,
     deleteVoucher,
-    addPoints
+    addPoints,
+    getInvoices
 };

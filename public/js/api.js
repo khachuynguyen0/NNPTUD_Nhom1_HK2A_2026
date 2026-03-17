@@ -67,6 +67,24 @@ async function callApi(method, url, body = null) {
     const res = await fetch(BASE_URL + url, options);
     const data = await res.json();
 
+    // Neu token het han hoac khong hop le, xoa khoi localStorage de tranh vong lap redirect
+    if (res.status === 401 || res.status === 403) {
+        // Chi xoa neu day la loi xac thuc (co message tu server)
+        if (data.message && (
+            data.message.includes('token') ||
+            data.message.includes('Token') ||
+            data.message.includes('xac thuc') ||
+            data.message.includes('dang nhap') ||
+            res.status === 401
+        )) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            localStorage.removeItem('username');
+            localStorage.removeItem('userId');
+            console.warn('[api] Token het han hoac khong hop le, da xoa localStorage');
+        }
+    }
+
     if (!res.ok) {
         throw new Error(data.message || 'Loi khong xac dinh');
     }
