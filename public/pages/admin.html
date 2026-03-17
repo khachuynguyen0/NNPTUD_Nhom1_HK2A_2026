@@ -952,9 +952,17 @@
                 }
 
                 tbody.innerHTML = list.map(a => {
-                    const serviceNames = Array.isArray(a.services)
-                        ? a.services.map(s => s.name || '').join(', ')
+                    // Nhom dich vu trung nhau thanh "Ten xSoLuong" cho gon
+                    const svcGroups = {};
+                    if (Array.isArray(a.services)) {
+                        a.services.filter(s => s && s.name).forEach(s => {
+                            svcGroups[s.name] = (svcGroups[s.name] || 0) + 1;
+                        });
+                    }
+                    const serviceNames = Object.keys(svcGroups).length > 0
+                        ? Object.entries(svcGroups).map(([name, qty]) => qty > 1 ? `${name} ×${qty}` : name).join(', ')
                         : 'Dịch vụ spa';
+
                     const pointsEarned = Math.floor((a.totalAmount || 0) / 10000);
                     const customerName = a.userId ? a.userId.username || a.customerName : a.customerName;
                     return `
