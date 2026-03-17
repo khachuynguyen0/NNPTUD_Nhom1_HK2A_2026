@@ -4,14 +4,17 @@ const Product = require('../models/Product');
 const User = require('../models/User');
 const { sendConfirmEmail } = require('../config/mailer');
 
-// GET /api/appointments - Admin: lay tat ca lich hen
+// GET /api/appointments - Admin: lay tat ca lich hen (chua thanh toan, sap xep moi nhat len dau)
 const getAll = async (req, res) => {
     try {
-        const list = await Appointment.find()
+        // Chi lay lich chua thanh toan (da thanh toan thi xem o Q.Ly Hoa Don)
+        // Sap xep theo appointmentDate giam dan: lich sap toi / moi nhat len dau
+        const list = await Appointment.find({ paymentStatus: { $ne: 'paid' } })
             .populate('services', 'name price')
-            .sort({ appointmentDate: 1 });
-        console.log(`[Appointment] getAll - Tim thay ${list.length} lich hen`);
+            .sort({ appointmentDate: -1 });
+        console.log(`[Appointment] getAll - Tim thay ${list.length} lich hen chua thanh toan`);
         res.json({ success: true, data: list });
+
     } catch (err) {
         console.error('[Appointment] getAll - loi:', err.message);
         res.status(500).json({ success: false, message: err.message });
