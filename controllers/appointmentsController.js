@@ -166,25 +166,25 @@ const confirm = async (req, res) => {
         // Tong hop ten dich vu de gui email
         const serviceNames = (appt.services || []).map(s => s.name).join(', ') || 'Dich vu spa';
 
-        // Gui email thong bao neu co email khach hang
+        // Gui email thong bao KHONG await -> tra response ngay, email gui ngam o background
         if (appt.email) {
-            try {
-                await sendConfirmEmail({
-                    toEmail: appt.email,
-                    customerName: appt.customerName,
-                    serviceName: serviceNames,
-                    appointmentDate: appt.appointmentDate,
-                });
-                console.log(`[Appointment] confirm - Da gui email den: ${appt.email}`);
-            } catch (mailErr) {
-                // Khong bat tat ca neu email loi, van tra thanh cong
-                console.error('[Appointment] confirm - Loi gui email:', mailErr.message);
-            }
+            sendConfirmEmail({
+                toEmail: appt.email,
+                customerName: appt.customerName,
+                serviceName: serviceNames,
+                appointmentDate: appt.appointmentDate,
+            }).then(() => {
+                console.log(`[Appointment] confirm - Da gui email (background) den: ${appt.email}`);
+            }).catch(mailErr => {
+                console.error('[Appointment] confirm - Loi gui email (background):', mailErr.message);
+            });
         } else {
             console.log('[Appointment] confirm - Khong co email khach hang, bo qua gui mail');
         }
 
+        // Tra response ngay (khong cho email gui xong)
         res.json({ success: true, data: appt, emailSent: !!appt.email });
+
     } catch (err) {
         console.error('[Appointment] confirm - loi:', err.message);
         res.status(500).json({ success: false, message: err.message });
